@@ -2,44 +2,30 @@ import os
 import pickle
 import numpy as np
 
-def load_data(path, subject):
-    """Given path and subject, load the data of the subject"""
-    os.chdir(path)
-    os.chdir(subject)
-    with open(subject + '.pkl', 'rb') as file:
-        data = pickle.load(file, encoding='latin1')
-    return data
+class read_data_one_subject:
+    def __init__(self, path, subject):
+        self.keys = ['label', 'subject', 'signal']
+        self.signal_keys = ['wrist', 'chest']
+        self.chest_sensor_keys = ['ACC', 'ECG', 'EDA', 'EMG', 'Resp', 'Temp']
+        self.wrist_sensor_keys = ['ACC', 'BVP', 'EDA', 'TEMP']
+        os.chdir(path)
+        os.chdir(subject)
+        with open(subject + '.pkl', 'rb') as file:
+            data = pickle.load(file, encoding='latin1')
+        self.data = data
 
-def read_data_one_subject(self, path, subject):
-    self.keys = ['label', 'subject', 'signal']
-    self.signal_keys = ['wrist', 'chest']
-    self.chest_sensor_keys = ['ACC', 'ECG', 'EDA', 'EMG', 'Resp', 'Temp']
-    self.wrist_sensor_keys = ['ACC', 'BVP', 'EDA', 'TEMP']
-    self.data = load_data(path, subject)
-    # os.chdir(path)
-    # os.chdir(subject)
-    # with open(subject + '.pkl', 'rb') as file:
-    #     data = pickle.load(file, encoding='latin1')
-    # self.data = data
+    def get_labels(self):
+        return self.data[self.keys[0]]
 
-def get_labels(self):
-    return self.data[self.keys[0]]
+    def get_wrist_data(self):
+        signal = self.data[self.keys[2]]
+        wrist_data = signal[self.signal_keys[0]]
+        return wrist_data
 
-def get_wrist_data(self):
-    """"""
-    #label = self.data[self.keys[0]]
-    #assert subject == self.data[self.keys[1]]
-    signal = self.data[self.keys[2]]
-    wrist_data = signal[self.signal_keys[0]]
-    #wrist_ACC = wrist_data[self.wrist_sensor_keys[0]]
-    #wrist_ECG = wrist_data[self.wrist_sensor_keys[1]]
-    return wrist_data
-
-def get_chest_data(self):
-    """"""
-    signal = self.data[self.keys[2]]
-    chest_data = signal[self.signal_keys[1]]
-    return chest_data
+    def get_chest_data(self):
+        signal = self.data[self.keys[2]]
+        chest_data = signal[self.signal_keys[1]]
+        return chest_data
 
 def execute(data_set_path):
     obj_data = {}
@@ -52,18 +38,29 @@ def execute(data_set_path):
         obj_data[subject] = read_data_one_subject(data_set_path, subject)
         
         labels[subject] = obj_data[subject].get_labels()
-        print(labels[subject])
 
         wrist_data_dict = obj_data[subject].get_wrist_data()
         wrist_dict_length = {key: len(value) for key, value in wrist_data_dict.items()}
-        print(wrist_dict_length)
+        # wrist_data = np.concatenate((chest_data_dict['ACC'], chest_data_dict['BVP'], chest_data_dict['EDA'],
+        #                              chest_data_dict['Temp']), axis=1)
+        # np.savetxt('data/wrist_bvp.txt', wrist_data_dict['BVP'], fmt='%f')
+        # np.savetxt('data/wrist_eda.txt', wrist_data_dict['EDA'], fmt='%f')
 
         chest_data_dict = obj_data[subject].get_chest_data()
         chest_dict_length = {key: len(value) for key, value in chest_data_dict.items()}
-        print(chest_dict_length)
-        chest_data = np.concatenate((chest_data_dict['ACC'], chest_data_dict['ECG'], chest_data_dict['EDA'],
-                                     chest_data_dict['EMG'], chest_data_dict['Resp'], chest_data_dict['Temp']), axis=1)
-        # Get labels
+
+        # for j in range(len(chest_data_dict['Temp'])):
+        #     if chest_data_dict['Temp'][j] < 30:
+        #         print(chest_data_dict['Temp'][j])
+        # np.savetxt('data/chest_ecg.txt', chest_data_dict['ECG'], fmt='%f')
+        for j in range(len(chest_data_dict['EDA'])):
+            chest_data_dict['EDA'][j] = ((chest_data_dict['EDA'][j]/4096)*3)/0.12
+        np.savetxt('data/chest_eda.txt', chest_data_dict['EDA'], fmt='%f')
+        # np.savetxt('data/chest_emg.txt', chest_data_dict['EMG'], fmt='%f')
+
+        print('finish')
+        # chest_data = np.concatenate((chest_data_dict['ACC'], chest_data_dict['ECG'], chest_data_dict['EDA'],
+        #                              chest_data_dict['EMG'], chest_data_dict['Resp'], chest_data_dict['Temp']), axis=1)
 
 
         # 'ACC' : 3, 'ECG' 1: , 'EDA' : 1, 'EMG': 1, 'RESP': 1, 'Temp': 1  ===> Total dimensions : 8
