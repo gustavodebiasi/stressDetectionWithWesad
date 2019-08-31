@@ -1,6 +1,10 @@
 import os
 import pickle
 import numpy as np
+from Types import Types
+
+directory = ''
+window = 20
 
 class read_data_one_subject:
     def __init__(self, path, subject):
@@ -27,85 +31,131 @@ class read_data_one_subject:
         chest_data = signal[self.signal_keys[1]]
         return chest_data
 
-def execute(data_set_path):
+def filter_types(labels, experience_types):
+    indexes = []
+    for i in experience_types:
+        indexes.extend(np.asarray([idx for idx, val in enumerate(labels) if val == i]))
+
+    return indexes
+
+def process_another_rate(labels, experience_types, new_rate):
+    each = int(np.ceil(700 / new_rate))
+
+    j = 0
+    new_labels = []
+    each700 = 0
+    counting = 0
+    for j in range(len(labels)):
+        each700 += 1
+        if ((j % each) == 0):
+            new_labels.append(labels[j])
+            counting += 1
+        if ((each700) == 700):
+            if (counting < new_rate):
+                if ((j % each) == 0):
+                    new_labels.append(labels[j+1])
+                else:
+                    new_labels.append(labels[j])
+            counting = 0
+            each700 = 0
+
+    indexes_new_rate = filter_types(new_labels, experience_types)
+
+    np.savetxt(directory + '/indexes_' + str(new_rate) + '.txt', indexes_new_rate, fmt='%d')    
+    np.savetxt(directory + '/labels_' + str(new_rate) + '.txt', new_labels, fmt='%d')
+
+    return indexes_new_rate
+
+
+def process_labels(labels, experience_types):
+    np.savetxt(directory + '/chest_labels_all.txt', labels, fmt='%d')
+
+    indexes = filter_types(labels, experience_types)
+    
+    new_labels = labels[indexes]
+    np.savetxt(directory + '/indexes_700.txt', indexes, fmt='%d')
+    np.savetxt(directory + '/chest_labels_filtered.txt', new_labels, fmt='%d')
+
+    index_64 = process_another_rate(labels, experience_types, 64)
+    index_32 = process_another_rate(labels, experience_types, 32)
+    index_4 = process_another_rate(labels, experience_types, 4)
+
+    all_indexes = {
+        '700': indexes,
+        '64': index_64,
+        '32': index_32,
+        '4': index_4
+    }
+
+    return all_indexes
+
+def create_directory(data_path, subject):
+    global directory
+    directory = data_path + '/' + subject + '/data/raw/'
+    if not (os.path.isdir(directory)):
+        os.makedirs(directory)
+
+def execute(data_set_path, experience_types, subjects):
     obj_data = {}
     labels = {}
     # all_data = {}
-    # subs = [3]
-    subs = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17]
-    for i in subs:
+    for i in subjects:
         subject = 'S' + str(i)
-        directory = data_set_path + '/' + subject + '/data/raw/'
-        if not (os.path.isdir(directory)):
-            os.makedirs(directory)
+        create_directory(data_set_path, subject)
 
         print("Reading data", subject)
         obj_data[subject] = read_data_one_subject(data_set_path, subject)
         
         # Read the labels from the pkl file and save as txt
         labels[subject] = obj_data[subject].get_labels()
-        np.savetxt(directory + '/chest_labels.txt', labels[subject], fmt='%d')
-        j = 0
-        labels32hz = []
-        labels4hz = []
-        labels64hz = []
-        cada700x64 = 0
-        cada700x32 = 0
-        contagem64 = 0
-        contagem32 = 0
-        for j in range(len(labels[subject])):
-            cada700x64 += 1
-            cada700x32 += 1
-            if ((j % 22) == 0):
-                labels32hz.append(labels[subject][j])
-                contagem32 += 1
-            if ((cada700x32) == 700):
-                if (contagem32 < 32):
-                    if ((j % 22) == 0):
-                        labels32hz.append(labels[subject][j+1])
-                    else:
-                        labels32hz.append(labels[subject][j])
-                contagem32 = 0
-                cada700x32 = 0
-            if ((j % 175) == 0):
-                labels4hz.append(labels[subject][j])
-            if ((j % 11) == 0):
-                labels64hz.append(labels[subject][j])
-                contagem64 += 1
-            if ((cada700x64) == 700):
-                if (contagem64 < 64):
-                    if ((j % 11) == 0):
-                        labels64hz.append(labels[subject][j+1])
-                    else:
-                        labels64hz.append(labels[subject][j])
-                contagem64 = 0
-                cada700x64 = 0
-            
-
-        np.savetxt(directory + '/labels32hz.txt', labels32hz, fmt='%d')
-        np.savetxt(directory + '/labels4hz.txt', labels4hz, fmt='%d')
-        np.savetxt(directory + '/labels64hz.txt', labels64hz, fmt='%d')
-
+        all_indexes = process_labels(labels[subject], experience_types)
 
         # Read the wrist signs from the pkl file 
         wrist_data_dict = obj_data[subject].get_wrist_data()
-        # wrist_dict_length = {key: len(value) for key, value in wrist_data_dict.items()}
+        wrist_dict_length = {key: len(value) for key, value in wrist_data_dict.items()}
         
-        np.savetxt(directory + '/wrist_bvp.txt', wrist_data_dict['BVP'], fmt='%f')
-        np.savetxt(directory + '/wrist_eda.txt', wrist_data_dict['EDA'], fmt='%f')
-        np.savetxt(directory + '/wrist_acc.txt', wrist_data_dict['ACC'], fmt='%f')
-        np.savetxt(directory + '/wrist_temp.txt', wrist_data_dict['TEMP'], fmt='%f')
+        np.savetxt(directory + '/wrist_bvp_all.txt', wrist_data_dict['BVP'], fmt='%f')
+        np.savetxt(directory + '/wrist_eda_all.txt', wrist_data_dict['EDA'], fmt='%f')
+        np.savetxt(directory + '/wrist_acc_all.txt', wrist_data_dict['ACC'], fmt='%f')
+        np.savetxt(directory + '/wrist_temp_all.txt', wrist_data_dict['TEMP'], fmt='%f')
+
+        bvp_filtered = wrist_data_dict['BVP'][all_indexes['64']]
+        np.savetxt(directory + '/wrist_bvp_filtered.txt', bvp_filtered, fmt='%f')
+
+        eda_filtered = wrist_data_dict['EDA'][all_indexes['4']]
+        np.savetxt(directory + '/wrist_eda_filtered.txt', eda_filtered, fmt='%f')
+
+        acc_filtered = wrist_data_dict['ACC'][all_indexes['32']]
+        np.savetxt(directory + '/wrist_acc_filtered.txt', acc_filtered, fmt='%f')
+
+        temp_filtered = wrist_data_dict['TEMP'][all_indexes['4']]
+        np.savetxt(directory + '/wrist_temp_filtered.txt', temp_filtered, fmt='%f')
+
 
         chest_data_dict = obj_data[subject].get_chest_data()
-        # chest_dict_length = {key: len(value) for key, value in chest_data_dict.items()}
-        # print(chest_dict_length)
+        chest_dict_length = {key: len(value) for key, value in chest_data_dict.items()}
+        print(chest_dict_length)
 
-        np.savetxt(directory + '/chest_ecg.txt', np.squeeze(chest_data_dict['ECG']), fmt='%f')
-        np.savetxt(directory + '/chest_eda.txt', np.squeeze(chest_data_dict['EDA']), fmt='%f')
-        np.savetxt(directory + '/chest_emg.txt', np.squeeze(chest_data_dict['EMG']), fmt='%f')
-        np.savetxt(directory + '/chest_temp.txt', np.squeeze(chest_data_dict['Temp']), fmt='%f')
-        np.savetxt(directory + '/chest_acc.txt', np.squeeze(chest_data_dict['ACC']), fmt='%f')
-        np.savetxt(directory + '/chest_resp.txt', np.squeeze(chest_data_dict['Resp']), fmt='%f')
+        np.savetxt(directory + '/chest_ecg_all.txt', np.squeeze(chest_data_dict['ECG']), fmt='%f')
+        np.savetxt(directory + '/chest_eda_all.txt', np.squeeze(chest_data_dict['EDA']), fmt='%f')
+        np.savetxt(directory + '/chest_emg_all.txt', np.squeeze(chest_data_dict['EMG']), fmt='%f')
+        np.savetxt(directory + '/chest_temp_all.txt', np.squeeze(chest_data_dict['Temp']), fmt='%f')
+        np.savetxt(directory + '/chest_acc_all.txt', np.squeeze(chest_data_dict['ACC']), fmt='%f')
+        np.savetxt(directory + '/chest_resp_all.txt', np.squeeze(chest_data_dict['Resp']), fmt='%f')
+
+        ecg_filtered = chest_data_dict['ECG'][all_indexes['700']]
+        np.savetxt(directory + '/chest_ecg_filtered.txt', ecg_filtered, fmt='%f')
+        eda_filtered = chest_data_dict['EDA'][all_indexes['700']]
+        np.savetxt(directory + '/chest_eda_filtered.txt', eda_filtered, fmt='%f')
+        emg_filtered = chest_data_dict['EMG'][all_indexes['700']]
+        np.savetxt(directory + '/chest_emg_filtered.txt', emg_filtered, fmt='%f')
+        temp_filtered = chest_data_dict['Temp'][all_indexes['700']]
+        np.savetxt(directory + '/chest_temp_filtered.txt', temp_filtered, fmt='%f')
+        acc_filtered = chest_data_dict['ACC'][all_indexes['700']]
+        np.savetxt(directory + '/chest_acc_filtered.txt', acc_filtered, fmt='%f')
+        resp_filtered = chest_data_dict['Resp'][all_indexes['700']]
+        np.savetxt(directory + '/chest_resp_filtered.txt', resp_filtered, fmt='%f')
+        
 
         print('finish')
 
@@ -147,9 +197,20 @@ def execute(data_set_path):
 
 if __name__ == '__main__':
     path = "/Volumes/My Passport/TCC/WESAD"
+    types = [
+        Types.BASELINE.value,
+        Types.STRESS.value,
+        Types.AMUSEMENT.value,
+    ]
+    
+    # subs = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17]
+    subs = [2]
+    
+    execute(path, types, subs)
+
+    # backup:
     # path_input = input('Digite o caminho (padrão = "/Volumes/My Passport/TCC/WESAD"')
     # if path_input:
     #     path = path_input
     # print("path = {}".format(path))
-    execute(path)
 
