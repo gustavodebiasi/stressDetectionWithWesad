@@ -11,6 +11,8 @@ registers700 = 0
 registers64 = 0
 registers32 = 0
 registers4 = 0
+window_overlap = True
+path = ''
 
 def extract_default_features(data):
     var_mean = np.mean(data)
@@ -33,157 +35,78 @@ def extract_default_features(data):
 
     return all_features
 
-def process_eda():
-    eda = np.loadtxt('chest_eda_filtered.txt')
-    if not (os.path.isdir('chest_eda')):
-        os.makedirs('chest_eda')
+def remove_files(device, which):
+    try: 
+        os.remove(device + '_' + which + '/labels_false.txt')
+    except Exception as e:
+        a = 'a'
 
-    eda_window = []
-    print(len(eda))
+    folder = path + device + '_' + which + '/'
+    for the_file in os.listdir(folder):
+        file_path = os.path.join(folder, the_file)
+        try:
+            if os.path.isfile(file_path):
+                os.unlink(file_path)
+        except Exception as e:
+            print(e)
+
+def process(labels, device, which, registers):
+    data = np.loadtxt(device + '_' + which + '_filtered.txt')
+    if not (os.path.isdir(device + '_' + which)):
+        os.makedirs(device + '_' + which)
+
+    remove_files(device, which)
+    data_window = []
     i = 0
-    files = 0
-    for i in range(len(eda)):
-        eda_window.append(eda[i])
-        if ((i == len(eda) and eda_window) or (i != 0 and (i % registers700) == 0)):
-            files += 1
-            eda_features = nk.eda_process(eda=eda_window, sampling_rate=700)
-            np.savetxt('chest_eda/' + str(files) + '_Onsets.txt', np.squeeze(eda_features['EDA']['SCR_Onsets']), fmt='%d')
-            np.savetxt('chest_eda/' + str(files) + '_peaks_indexes.txt', np.squeeze(eda_features['EDA']['SCR_Peaks_Indexes']), fmt='%d')
-            np.savetxt('chest_eda/' + str(files) + '_recovery.txt', np.squeeze(eda_features['EDA']['SCR_Recovery_Indexes']), fmt='%d')
-            np.savetxt('chest_eda/' + str(files) + '_amplitudes.txt', np.squeeze(eda_features['EDA']['SCR_Peaks_Amplitudes']), fmt='%f')
-            eda_window = []
-            np.savetxt('chest_eda/' + str(files) + '_min.txt', [np.amin(eda_window)], fmt='%f')
-            np.savetxt('chest_eda/' + str(files) + '_max.txt', [np.amax(eda_window)], fmt='%f')
-            np.savetxt('chest_eda/' + str(files) + '_std.txt', [np.std(eda_window)], fmt='%f')
-            np.savetxt('chest_eda/' + str(files) + '_mean.txt', [np.mean(eda_window)], fmt='%f')
+    label_anterior = labels[i]
+    for i in range(len(data)):
+        if (i == len(data)):
+            data_window.append(data[i])
 
-    # eda2 = np.loadtxt('wrist_eda.txt')
-    # if not (os.path.isdir('wrist_eda')):
-    #     os.makedirs('wrist_eda')
-
-    # eda2_window = []
-    # print(len(eda2))
-    # print(min(eda2))
-    # print(max(eda2))
-    # i = 0
-    # files = 0
-    # for i in range(len(eda2)):
-    #     eda2_window.append((eda2[i]+5))
-    #     if ((i == len(eda2) and eda2_window) or (i != 0 and (i % 79) == 0)):
-    #         files += 1
-    #         print(eda2_window)
-    #         print(len(eda2_window))
-    #         eda_features = nk.eda_process(eda=eda2_window, sampling_rate=4)
-    #         np.savetxt('wrist_eda/' + str(files) + '_Onsets.txt', np.squeeze(eda_features['EDA']['SCR_Onsets']), fmt='%d')
-    #         np.savetxt('wrist_eda/' + str(files) + '_peaks_indexes.txt', np.squeeze(eda_features['EDA']['SCR_Peaks_Indexes']), fmt='%d')
-    #         np.savetxt('wrist_eda/' + str(files) + '_recovery.txt', np.squeeze(eda_features['EDA']['SCR_Recovery_Indexes']), fmt='%d')
-    #         np.savetxt('wrist_eda/' + str(files) + '_amplitudes.txt', np.squeeze(eda_features['EDA']['SCR_Peaks_Amplitudes']), fmt='%f')
-    #         eda2_window = []
-
-
-def process_resp():
-    rsp = np.loadtxt('chest_resp.txt')
-    if not (os.path.isdir('chest_resp')):
-        os.makedirs('chest_resp')
-
-    rsp_window = []
-    print(len(rsp))
-    i = 0
-    files = 0
-    for i in range(len(rsp)):
-        rsp_window.append(rsp[i])
-        if ((i == len(rsp) and rsp_window) or (i != 0 and (i % registers700) == 0)):
-            files += 1
-            rsp_features = nk.rsp_process(rsp=rsp_window, sampling_rate=700)
-            np.savetxt('chest_resp/' + str(files) + '_Onsets.txt', np.squeeze(rsp_features['RSP']['Cycles_Onsets']), fmt='%d')
-            np.savetxt('chest_resp/' + str(files) + '_Expiration_Onsets.txt', np.squeeze(rsp_features['RSP']['Expiration_Onsets']), fmt='%d')
-            np.savetxt('chest_resp/' + str(files) + '_Cycles_Length.txt', rsp_features['RSP']['Cycles_Length'], fmt='%f')
-            respiratory_variability = []
-            respiratory_variability.append(rsp_features['RSP']['Respiratory_Variability']['RSPV_SD'])
-            respiratory_variability.append(rsp_features['RSP']['Respiratory_Variability']['RSPV_RMSSD'])
-            respiratory_variability.append(rsp_features['RSP']['Respiratory_Variability']['RSPV_RMSSD_Log'])
-            np.savetxt('chest_resp/' + str(files) + '_Respiratory_Variability.txt', respiratory_variability, fmt='%f')
-            np.savetxt('chest_resp/' + str(files) + '_min.txt', [np.amin(rsp_window)], fmt='%f')
-            np.savetxt('chest_resp/' + str(files) + '_max.txt', [np.amax(rsp_window)], fmt='%f')
-            np.savetxt('chest_resp/' + str(files) + '_std.txt', [np.std(rsp_window)], fmt='%f')
-            np.savetxt('chest_resp/' + str(files) + '_mean.txt', [np.mean(rsp_window)], fmt='%f')
+        if ((i == len(data) and len(data_window) > 0) or (i != 0 and (len(data_window) % registers) == 0) or (label_anterior != labels[i] and len(data_window) > 0)):
+            all_features = extract_default_features(data_window)
+            data_window = []
             
-            rsp_window = []
-    
-    print('resp')
-
-def process_ecg():
-    print('ecg')
-    ecg = np.loadtxt('chest_ecg.txt')
-    rsp = np.loadtxt('chest_resp.txt')
-    if not (os.path.isdir('chest_ecg')):
-        os.makedirs('chest_ecg')
-
-    ecg_window = []
-    rsp_window = []
-    print(len(ecg))
-    i = 0
-    files = 0
-    for i in range(len(ecg)):
-        ecg_window.append(ecg[i])
-        rsp_window.append(rsp[i])
-        if ((i == len(ecg) and ecg_window) or (i != 0 and (i % registers700) == 0)):
-            files += 1
-            ecg_features = nk.ecg_process(ecg_window, rsp=rsp_window, sampling_rate=700)
-            print(ecg_features)
-            break
-
-def process_emg(registers700):
-    emg = np.loadtxt('chest_emg_filtered.txt')
-    if not (os.path.isdir('chest_emg')):
-        os.makedirs('chest_emg')
-
-    emg_window = []
-    print(len(emg))
-    i = 0
-    files = 0
-    # for i in range(len(emg)):
-    for i in range(registers700):
-        emg_window.append(emg[i])
+            for key,val in all_features.items():
+                with open(device + '_' + which + '/' + key + '_false.txt', 'a') as myfile:
+                    myfile.write(str(float(val)) + '\n')
+                
+            with open(device + '_' + which + '/labels_false.txt', 'a') as myfile:
+                myfile.write(str(int(labels[i])) + '\n')
             
-        # if ((i == len(emg) and emg_window) or (i != 0 and (i % registers700) == 0)):
-        #     emg_features = nk.emg_process(emg=emg_window, sampling_rate=700)
-        #     np.savetxt('chest_emg/' + str(files) + 'WINDOW.txt', emg_window, fmt='%f')
-        #     files += 1
-        #     # np.savetxt('chest_emg/' + str(files) + '_Onsets.txt', np.squeeze(emg_features['EDA']['SCR_Onsets']), fmt='%f')
-        #     np.savetxt('chest_emg/' + str(files) + '_peaks_indexes.txt', np.squeeze(eda_features['EDA']['SCR_Peaks_Indexes']), fmt='%f')
-        #     np.savetxt('chest_emg/' + str(files) + '_recovery.txt', np.squeeze(eda_features['EDA']['SCR_Recovery_Indexes']), fmt='%f')
-        #     np.savetxt('chest_emg/' + str(files) + '_amplitudes.txt', np.squeeze(eda_features['EDA']['SCR_Peaks_Amplitudes']), fmt='%f')
-        #     eda_window = []
-    
-    emg_features = nk.emg_process(emg=emg_window, sampling_rate=700)
-    print(emg_features)
+        data_window.append(data[i])
+        label_anterior = labels[i]
 
-def execute(data_set_path):
-    os.chdir(path)
 
-    # subs = [3]
+def execute():
+    # path = "/Users/gustavodebiasi/Documents/DadosTCC/data/raw/"
+    global path
+
+    subjects = [3]
     # subs = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17]
-    # for i in subs:
-        # subject = 'S' + str(i)
-        # directory = data_set_path + '/' + subject + '/data/raw/'
-        # os.chdir(data_set_path)
+    for i in subjects:
+        subject = 'S' + str(i)
+        path = '/Volumes/My Passport/TCC/WESAD/' + subject + '/data/raw/'
+        os.chdir(path)
+    
+        labels = np.loadtxt('chest_labels_filtered.txt')
 
-    # process_eda()
-    # process_resp()
-    # process_ecg()
-    process_emg(registers700)
-        
-
+        process(labels, 'chest', 'eda', registers700)
+        process(labels, 'chest', 'resp', registers700)
+        process(labels, 'chest', 'ecg', registers700)
+        process(labels, 'chest', 'emg', registers700)
+        process(labels, 'chest', 'temp', registers700)
+        process(labels, 'wrist', 'bvp', registers64)
+        process(labels, 'wrist', 'eda', registers4)
+        process(labels, 'wrist', 'temp', registers4)
 
 if __name__ == '__main__':
-    # path = "/Users/gustavodebiasi/Documents/DadosTCC/data/raw/"
-    path = "/Volumes/My Passport/TCC/WESAD/S2/data/raw/"
     window = 20
+    window_overlap = True
     registers700 = 700 * window
     registers64 = 64 * window
     registers32 = 32 * window
     registers4 = 4 * window 
-    execute(path)
+    execute()
     
     
