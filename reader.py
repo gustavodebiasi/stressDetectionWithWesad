@@ -1,35 +1,11 @@
 import os
 import pickle
 import numpy as np
-from Types import Types
+from Enums.Types import Types
+from Helpers.read_data_one_subject import read_data_one_subject
 
 directory = ''
 window = 20
-
-class read_data_one_subject:
-    def __init__(self, path, subject):
-        self.keys = ['label', 'subject', 'signal']
-        self.signal_keys = ['wrist', 'chest']
-        self.chest_sensor_keys = ['ACC', 'ECG', 'EDA', 'EMG', 'Resp', 'Temp']
-        self.wrist_sensor_keys = ['ACC', 'BVP', 'EDA', 'TEMP']
-        os.chdir(path)
-        os.chdir(subject)
-        with open(subject + '.pkl', 'rb') as file:
-            data = pickle.load(file, encoding='latin1')
-        self.data = data
-
-    def get_labels(self):
-        return self.data[self.keys[0]]
-
-    def get_wrist_data(self):
-        signal = self.data[self.keys[2]]
-        wrist_data = signal[self.signal_keys[0]]
-        return wrist_data
-
-    def get_chest_data(self):
-        signal = self.data[self.keys[2]]
-        chest_data = signal[self.signal_keys[1]]
-        return chest_data
 
 def filter_types(labels, experience_types):
     indexes = []
@@ -162,39 +138,7 @@ def execute(data_set_path, experience_types, subjects):
         # 'ACC' : 3, 'ECG' 1: , 'EDA' : 1, 'EMG': 1, 'RESP': 1, 'Temp': 1  ===> Total dimensions : 8
         # No. of Labels ==> 8 ; 0 = not defined / transient, 1 = baseline, 2 = stress, 3 = amusement,
         # 4 = meditation, 5/6/7 = should be ignored in this dataset
-
-        # Do for each subject
-        '''
-        baseline = np.asarray([idx for idx, val in enumerate(labels[subject]) if val == 1])
-        print("Baseline:", chest_data_dict['ECG'][baseline].shape)
-        print(baseline.shape)
-
-        stress = np.asarray([idx for idx, val in enumerate(labels[subject]) if val == 2])
-        print(stress.shape)
-
-        amusement = np.asarray([idx for idx, val in enumerate(labels[subject]) if val == 3])
-        print(amusement.shape)
         
-        baseline_data = extract_one(chest_data_dict, baseline, l_condition=1)
-        stress_data = extract_one(chest_data_dict, stress, l_condition=2)
-        amusement_data = extract_one(chest_data_dict, amusement, l_condition=3)
-
-        full_data = np.vstack((baseline_data, stress_data, amusement_data))
-        print("One subject data", full_data.shape)
-        all_data[subject] = full_data
-
-    i = 0
-    for k, v in all_data.items():
-        if i == 0:
-            data = all_data[k]
-            i += 1
-        print(all_data[k].shape)
-        data = np.vstack((data, all_data[k]))
-
-    print(data.shape)
-    return data
-    '''
-
 if __name__ == '__main__':
     path = "/Volumes/My Passport/TCC/WESAD"
     types = [
@@ -204,7 +148,7 @@ if __name__ == '__main__':
     ]
     
     # subs = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17]
-    subs = [11, 13, 14, 15, 16, 17]
+    subs = [17]
     
     execute(path, types, subs)
 
