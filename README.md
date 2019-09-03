@@ -1,5 +1,4 @@
-# stressDetectionWithWesad
-Stress Detection with WESAD dataset
+# Stress Detection with WESAD dataset
 
 This project is divided in some steps:
 1. reader: read the data from the pickle file;
