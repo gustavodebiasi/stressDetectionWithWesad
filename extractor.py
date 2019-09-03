@@ -82,7 +82,7 @@ def execute():
     # path = "/Users/gustavodebiasi/Documents/DadosTCC/data/raw/"
     global path
 
-    subjects = [3]
+    subjects = [2]
     # subs = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17]
     for i in subjects:
         subject = 'S' + str(i)
