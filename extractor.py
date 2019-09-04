@@ -82,8 +82,8 @@ def execute():
     # path = "/Users/gustavodebiasi/Documents/DadosTCC/data/raw/"
     global path
 
-    subjects = [2]
-    # subs = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17]
+    # subjects = [4]
+    subjects = [11, 13, 14, 15, 16, 17]
     for i in subjects:
         subject = 'S' + str(i)
         path = '/Volumes/My Passport/TCC/WESAD/' + subject + '/data/raw/'
