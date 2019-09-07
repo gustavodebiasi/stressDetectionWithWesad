@@ -35,6 +35,9 @@ def extract_default_features(data):
 
     return all_features
 
+def extrair_emg(dados):
+    return nk.emg_process(dados, 700, envelope_freqs=[10, 300])
+
 def remove_files(device, which):
     try: 
         os.remove(device + '_' + which + '/labels_false.txt')
@@ -83,7 +86,7 @@ def execute():
     global path
 
     # subjects = [4]
-    subjects = [11, 13, 14, 15, 16, 17]
+    subjects = [2]
     for i in subjects:
         subject = 'S' + str(i)
         path = '/Volumes/My Passport/TCC/WESAD/' + subject + '/data/raw/'
@@ -91,14 +94,18 @@ def execute():
     
         labels = np.loadtxt('chest_labels_filtered.txt')
 
-        process(labels, 'chest', 'eda', registers700)
-        process(labels, 'chest', 'resp', registers700)
-        process(labels, 'chest', 'ecg', registers700)
-        process(labels, 'chest', 'emg', registers700)
-        process(labels, 'chest', 'temp', registers700)
-        process(labels, 'wrist', 'bvp', registers64)
-        process(labels, 'wrist', 'eda', registers4)
-        process(labels, 'wrist', 'temp', registers4)
+        dados = np.loadtxt('chest_emg_filtered.txt')
+
+        processamento = extrair_emg(dados)
+        print(processamento)
+        # process(labels, 'chest', 'eda', registers700)
+        # process(labels, 'chest', 'resp', registers700)
+        # process(labels, 'chest', 'ecg', registers700)
+        # process(labels, 'chest', 'emg', registers700)
+        # process(labels, 'chest', 'temp', registers700)
+        # process(labels, 'wrist', 'bvp', registers64)
+        # process(labels, 'wrist', 'eda', registers4)
+        # process(labels, 'wrist', 'temp', registers4)
 
 if __name__ == '__main__':
     window = 20
