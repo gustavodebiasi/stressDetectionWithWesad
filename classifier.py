@@ -79,6 +79,24 @@ def svm_classifier(training_data, training_labels, testing_data):
 
     return predictions
 
+def knn_classifier(training_data, training_labels, testing_data):
+    nbrs = NearestNeighbors(n_neighbors=5, algorithm='ball_tree')
+    nbrs = nbrs.fit(training_data, training_labels)
+    distances, indices = nbrs.kneighbors(testing_data)
+    predictions = []
+    for indice in indices:
+        i = 0
+        count_stress = 0
+        for i in range(len(indice)):
+            if (training_labels[indice[i]] == 2.0):
+                count_stress += 1
+        if (count_stress >= 3):
+            predictions.append(2.)
+        else:
+            predictions.append(1.)
+
+    return predictions
+
 def calc_sensibility(confusion):
     return (confusion[0][0] / (confusion[0][0] + confusion[1][0]))
 
@@ -86,10 +104,7 @@ def calc_specificity(confusion):
     return (confusion[1][1] / (confusion[1][1] + confusion[0][1]))
 
 def print_results(predictions, testing_labels):
-    print('Predictions:')
-    print(predictions)
-    print('Correct:')
-    print(testing_labels)
+    print('Predictions = ', predictions)
     print('acuracy= ', accuracy_score(testing_labels, predictions))
     matrix = confusion_matrix(testing_labels, predictions)
     print('matrix = ', matrix)
@@ -102,14 +117,19 @@ def execute():
     dt = DecisionTreeClassifier(random_state=0, max_depth=2)
     rf = RandomForestClassifier(n_estimators=100, max_depth=5, oob_score=True)
     clf = svm.SVC(gamma='scale')
+    nbrs = NearestNeighbors(n_neighbors=5, algorithm='ball_tree')
     
-    for sub in all_subjects:
+    # for sub in all_subjects:
+    for sub in [17]:
         print('sujeito = ', sub)
         training_labels, training_features = get_data(sub, 'training')
         testing_labels, testing_features = get_data(sub, 'testing')
 
+        print('labels true = ', testing_labels)
+        '''
         dt = dt.fit(training_features, training_labels)
         predictions = dt.predict(testing_features)
+        print('--------------------------------')
         print('DECISION TREE ', sub)
         print_results(predictions, testing_labels)
 
@@ -117,13 +137,21 @@ def execute():
         
         rf = rf.fit(training_features, training_labels)
         predictions = rf.predict(testing_features)
+        print('--------------------------------')
         print('RANDOM FOREST ', sub)
         print_results(predictions, testing_labels)
 
         # predictions = svm_classifier(training_features, training_labels, testing_features)
         clf = clf.fit(training_features, training_labels)
         predictions = clf.predict(testing_features)
+        print('--------------------------------')
         print('SVM ', sub)
+        print_results(predictions, testing_labels)
+        '''
+        # KNN -
+        print('--------------------------------')
+        print('KNN ', sub)
+        predictions = knn_classifier(training_features, training_labels, testing_features)
         print_results(predictions, testing_labels)
 
 if __name__ == '__main__':
