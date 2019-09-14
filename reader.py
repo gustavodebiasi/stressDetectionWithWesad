@@ -66,7 +66,7 @@ class Reader(object):
         return all_indexes
 
     def create_directory(self, data_path, subject):
-        self.directory = data_path + '/' + subject + '/data/raw/'
+        self.directory = data_path + '/' + subject + '/data/'
         if not (os.path.isdir(self.directory)):
             os.makedirs(self.directory)
 
