@@ -25,35 +25,19 @@ def get_data(subject, data_type):
     
     for i in subjects:
         subject = 'S' + str(i)
-        path = '/Volumes/My Passport/TCC/WESAD/' + subject + '/data/raw/chest_ecg/'
+        path = '/Volumes/My Passport/TCC/WESAD/' + subject + '/data/chest_ecg/'
         os.chdir(path)
 
-        labels2 = np.asarray(np.loadtxt('labels_false.txt'))
+        labels2 = np.asarray(np.loadtxt('labels_20_True.txt'))
         labels.extend(labels2)
-        kurtosis = np.asarray(np.loadtxt('kurtosis_false.txt'))
-        max_var = np.asarray(np.loadtxt('max_false.txt'))
-        mean_var = np.asarray(np.loadtxt('mean_false.txt'))
-        median_var = np.asarray(np.loadtxt('median_false.txt'))
-        min_var = np.asarray(np.loadtxt('min_false.txt'))
-        std_var = np.asarray(np.loadtxt('std_false.txt'))
-        variance_var = np.asarray(np.loadtxt('variance_false.txt'))
-        k = 0
-        for k in range(len(kurtosis)):
-            features.append([
-                kurtosis[k],
-                max_var[k],
-                mean_var[k],
-                median_var[k],
-                min_var[k],
-                std_var[k],
-                variance_var[k]
-            ])
+        features2 = np.asarray(np.loadtxt('features_20_True.txt'))
+        features.extend(features2)
 
     features = np.asarray(features)
-    i = 0
-    for i in range(len(labels)):
-        if (int(labels[i]) == 3):
-            labels[i] = 1
+    # i = 0
+    # for i in range(len(labels)):
+    #     if (int(labels[i]) == 3):
+    #         labels[i] = 1
     labels = np.asarray(labels)
 
     return labels, features
@@ -104,7 +88,7 @@ def calc_specificity(confusion):
     return (confusion[1][1] / (confusion[1][1] + confusion[0][1]))
 
 def print_results(predictions, testing_labels):
-    print('Predictions = ', predictions)
+    # print('Predictions = ', predictions)
     print('acuracy= ', accuracy_score(testing_labels, predictions))
     matrix = confusion_matrix(testing_labels, predictions)
     print('matrix = ', matrix)
@@ -114,45 +98,58 @@ def print_results(predictions, testing_labels):
 
 def execute():
     
-    dt = DecisionTreeClassifier(random_state=0, max_depth=2)
+    # dt = DecisionTreeClassifier(random_state=0, max_depth=2)
     rf = RandomForestClassifier(n_estimators=100, max_depth=5, oob_score=True)
     clf = svm.SVC(gamma='scale')
     nbrs = NearestNeighbors(n_neighbors=5, algorithm='ball_tree')
+
+    predictsRF = []
+    predictsCLF = []
+    predictsNBRS = []
+    testings = []
     
-    # for sub in all_subjects:
-    for sub in [17]:
+    for sub in all_subjects:
+    # for sub in [17]:
         print('sujeito = ', sub)
         training_labels, training_features = get_data(sub, 'training')
         testing_labels, testing_features = get_data(sub, 'testing')
 
-        print('labels true = ', testing_labels)
-        '''
-        dt = dt.fit(training_features, training_labels)
-        predictions = dt.predict(testing_features)
-        print('--------------------------------')
-        print('DECISION TREE ', sub)
-        print_results(predictions, testing_labels)
+        testings.extend(testing_labels)
+
+        # print('labels true = ', testing_labels)
+        # dt = dt.fit(training_features, training_labels)
+        # predictions = dt.predict(testing_features)
+        # print('--------------------------------')
+        # print('DECISION TREE ', sub)
+        # print_results(predictions, testing_labels)
 
         # predictions = random_forest_classifier(training_features, training_labels, testing_features)
+        # print(training_features.shape)
+        # print(training_features)
+        # print(training_labels)
         
         rf = rf.fit(training_features, training_labels)
         predictions = rf.predict(testing_features)
-        print('--------------------------------')
-        print('RANDOM FOREST ', sub)
-        print_results(predictions, testing_labels)
+        predictsRF.extend(predictions)
+        # print('--------------------------------')
+        # print('RANDOM FOREST ', sub)
+        # print_results(predictions, testing_labels)
 
         # predictions = svm_classifier(training_features, training_labels, testing_features)
         clf = clf.fit(training_features, training_labels)
         predictions = clf.predict(testing_features)
-        print('--------------------------------')
-        print('SVM ', sub)
-        print_results(predictions, testing_labels)
-        '''
+        predictsCLF.extend(predictions)
+        # print('--------------------------------')
+        # print('SVM ', sub)
+        # print_results(predictions, testing_labels)
         # KNN -
-        print('--------------------------------')
-        print('KNN ', sub)
+        # print('--------------------------------')
+        # print('KNN ', sub)
         predictions = knn_classifier(training_features, training_labels, testing_features)
-        print_results(predictions, testing_labels)
+        predictsNBRS.extend(predictions)
+        # print_results(predictions, testing_labels)
+
+    print_results(predictsRF, testings)
 
 if __name__ == '__main__':
     execute()
