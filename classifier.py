@@ -34,10 +34,10 @@ def get_data(subject, data_type):
         features.extend(features2)
 
     features = np.asarray(features)
-    # i = 0
-    # for i in range(len(labels)):
-    #     if (int(labels[i]) == 3):
-    #         labels[i] = 1
+    i = 0
+    for i in range(len(labels)):
+        if (int(labels[i]) == 3):
+            labels[i] = 1
     labels = np.asarray(labels)
 
     return labels, features
@@ -149,7 +149,12 @@ def execute():
         predictsNBRS.extend(predictions)
         # print_results(predictions, testing_labels)
 
+    print('RF')
     print_results(predictsRF, testings)
+    print('SVM')
+    print_results(predictsCLF, testings)
+    print('KNN')
+    print_results(predictsNBRS, testings)
 
 if __name__ == '__main__':
     execute()

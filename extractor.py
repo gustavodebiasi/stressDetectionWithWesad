@@ -49,7 +49,7 @@ class Extractor(object):
         return nk.emg_process(data, 700, envelope_freqs=[10, 300])
 
     def extract_ecg(self, data_ecg, data_resp):
-        return []
+        return nk.ecg_process(data_ecg, data_resp, 700)
 
     def extract_resp(self, data_resp):
         return []
@@ -60,12 +60,38 @@ class Extractor(object):
     def extract_temp(self, data):
         return []
 
-    def process(self, labels, device, which, registers):
+    def read_file(self, device, which):
         data = np.loadtxt(device + '_' + which + '_filtered.txt')
         if not (os.path.isdir(device + '_' + which)):
             os.makedirs(device + '_' + which)
+        return data
+
+    def extract_features(self, data_window, which, data_window_resp):
+        print('aaaaaa')
+        print(which)
+        if (which == 'eda'):
+            return self.extract_default_features(data_window)
+        elif (which == 'resp'):
+            return self.extract_default_features(data_window)
+        elif (which == 'ecg'):
+            print('teste')
+            data = self.extract_ecg(data_window, data_window_resp)
+            print('k')
+        elif (which == 'emg'):
+            return self.extract_default_features(data_window)
+        elif (which == 'temp'):
+            return self.extract_default_features(data_window)
+        elif (which == 'bvp'):
+            return self.extract_default_features(data_window)
+
+
+    def process(self, labels, device, which, registers):
+        data = self.read_file(device, which)
+        if (which == 'ecg'):
+            data_resp = self.read_file(device, 'resp')
 
         data_window = []
+        data_window_resp = []
         i = 0
         label_anterior = labels[i]
         all_features = []
@@ -74,23 +100,28 @@ class Extractor(object):
         while (i <= data_size):
             if (i == data_size):
                 data_window.append(data[i])
+                if (which == 'ecg'):
+                    data_window_resp.append(data_resp[i])
 
             if ((i == data_size and len(data_window) > 0) or (i > 0 and (len(data_window) % registers) == 0) or (label_anterior != labels[i] and len(data_window) > 0)):
-                all_features.append(self.extract_default_features(data_window))
+                all_features.append(self.extract_features(data_window, which, data_window_resp))
                 window_labels.append(labels[i])
                 data_window = []
+                data_window_resp = []
                 
                 if (i != data_size and self.window_overlap and len(data_window) % registers == 0 and label_anterior == labels[i]):
                     i = i - int(registers / 2)
                 
-            if (i == data_size):
-                all_feat = np.asarray(all_features)
-                final_path_feat = self.path + '/' + device + '_' + which + '/features_' + str(self.window) + '_' + str(self.window_overlap) + '.txt'
-                final_path_label = self.path + '/' + device + '_' + which + '/labels_' + str(self.window) + '_' + str(self.window_overlap) + '.txt'
-                np.savetxt(final_path_feat, all_feat, fmt="%f")
-                np.savetxt(final_path_label, window_labels, fmt="%d")
+            # if (i == data_size):
+            #     all_feat = np.asarray(all_features)
+            #     final_path_feat = self.path + '/' + device + '_' + which + '/features_' + str(self.window) + '_' + str(self.window_overlap) + '.txt'
+            #     final_path_label = self.path + '/' + device + '_' + which + '/labels_' + str(self.window) + '_' + str(self.window_overlap) + '.txt'
+            #     np.savetxt(final_path_feat, all_feat, fmt="%f")
+            #     np.savetxt(final_path_label, window_labels, fmt="%d")
                                 
             data_window.append(data[i])
+            if (which == 'ecg'):
+                data_window_resp.append(data_resp[i])
             label_anterior = labels[i]
             i += 1
 
@@ -106,14 +137,14 @@ class Extractor(object):
         
             labels = np.loadtxt('chest_labels_filtered.txt')
 
-            self.process(labels, 'chest', 'eda', self.registers700)
-            self.process(labels, 'chest', 'resp', self.registers700)
+            # self.process(labels, 'chest', 'eda', self.registers700)
+            # self.process(labels, 'chest', 'resp', self.registers700)
             self.process(labels, 'chest', 'ecg', self.registers700)
-            self.process(labels, 'chest', 'emg', self.registers700)
-            self.process(labels, 'chest', 'temp', self.registers700)
-            self.process(labels, 'wrist', 'bvp', self.registers64)
-            self.process(labels, 'wrist', 'eda', self.registers4)
-            self.process(labels, 'wrist', 'temp', self.registers4)
+            # self.process(labels, 'chest', 'emg', self.registers700)
+            # self.process(labels, 'chest', 'temp', self.registers700)
+            # self.process(labels, 'wrist', 'bvp', self.registers64)
+            # self.process(labels, 'wrist', 'eda', self.registers4)
+            # self.process(labels, 'wrist', 'temp', self.registers4)
 
 from extractor import Extractor
 
@@ -121,8 +152,8 @@ if __name__ == '__main__':
     window = 20
     window_overlap = True
     path = '/Volumes/My Passport/TCC/WESAD/'
-    # subjects = [2]
-    subjects = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17]
+    subjects = [2]
+    # subjects = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17]
     extract = Extractor()
     extract.execute(path, window, window_overlap, subjects)
     
