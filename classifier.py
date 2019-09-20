@@ -1,7 +1,6 @@
 import os
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.tree import DecisionTreeClassifier
 from sklearn import svm
 from sklearn.metrics import accuracy_score
 from sklearn.neighbors import NearestNeighbors
@@ -12,6 +11,7 @@ from sklearn.metrics import confusion_matrix
 from sklearn.metrics import classification_report
 
 all_subjects = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17]
+# all_subjects = [2, 3]
 
 def get_data(subject, data_type):
     features = []
@@ -90,11 +90,8 @@ def print_results(predictions, testing_labels):
     print('--------------------------------')
 
 def execute():
-    
-    # dt = DecisionTreeClassifier(random_state=0, max_depth=2)
     rf = RandomForestClassifier(n_estimators=100, max_depth=5, oob_score=True)
     clf = svm.SVC(gamma='scale')
-    nbrs = NearestNeighbors(n_neighbors=5, algorithm='ball_tree')
 
     predictsRF = []
     predictsCLF = []

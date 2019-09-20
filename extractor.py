@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import neurokit as nk
 import pandas as pd
 from scipy.stats import kurtosis
+from scipy.stats import skew
 
 class Extractor(object):
     registers700 = 0
@@ -29,15 +30,19 @@ class Extractor(object):
         var_median = np.median(data)
         var_variance = np.var(data)
         var_kurtosis = kurtosis(data)
+        var_skew = self.select_data_from_string(skew(data))
+        var_range = self.select_data_from_string(var_max - var_min)
 
         return [
-            var_mean,
-            var_min,
-            var_max,
-            var_std,
-            var_median,
-            var_variance,
-            var_kurtosis,
+            np.float32(var_mean),
+            np.float32(var_min),
+            np.float32(var_max),
+            np.float32(var_std),
+            np.float32(var_median),
+            np.float32(var_variance),
+            np.float32(var_kurtosis),
+            np.float32(var_skew),
+            np.float32(var_range)
         ]
 
     def read_subject_basic_info(self):
@@ -48,21 +53,34 @@ class Extractor(object):
             return []
         return nk.emg_process(data, 700, envelope_freqs=[10, 300])
 
+    def select_data_from_string(self, string):
+        if (np.isnan(string)):
+            return 0.
+        return string
+
     def select_data_from_array(self, array, stat):
         try:
             result = np.float32(array[stat])
-            if (np.isnan(result)):
-                return 0.
-
-            return result
+            return self.select_data_from_string(result)
         except:
             return 0.
 
     def extract_ecg(self, data_ecg):
-        default_features = self.extract_default_features(data_ecg)
-        data = nk.ecg_process(ecg=data_ecg, rsp=None, sampling_rate=700, filter_type='FIR', filter_band='bandpass', filter_frequency=[3,45], segmenter='hamilton', quality_model='default', hrv_features=['time','frequency'])
+        data = nk.ecg_process(ecg=data_ecg, rsp=None, sampling_rate=700, filter_type='FIR', filter_band='bandpass', filter_frequency=[3,45], segmenter='hamilton', quality_model='default', hrv_features=['time', 'frequency', 'nonlinear'])
+        ecg_filtered = np.asarray(data['df']['ECG_Filtered'])
+        default_features = self.extract_default_features(ecg_filtered)
         default_features.extend([
             self.select_data_from_array(data['ECG']['HRV'],'CVSD'),
+            self.select_data_from_array(data['ECG']['HRV'],'Correlation_Dimension'),
+            self.select_data_from_array(data['ECG']['HRV'],'DFA_1'),
+            self.select_data_from_array(data['ECG']['HRV'],'DFA_2'),
+            self.select_data_from_array(data['ECG']['HRV'],'Entropy_multiscale_AUC'),
+            self.select_data_from_array(data['ECG']['HRV'],'Entropy_SVD'),
+            self.select_data_from_array(data['ECG']['HRV'],'Entropy_Spectral_HF'),
+            self.select_data_from_array(data['ECG']['HRV'],'Entropy_Spectral_LF'),
+            self.select_data_from_array(data['ECG']['HRV'],'Entropy_Spectral_VLF'),
+            self.select_data_from_array(data['ECG']['HRV'],'FD_Higushi'),
+            self.select_data_from_array(data['ECG']['HRV'],'Fisher_Info'),
             self.select_data_from_array(data['ECG']['HRV'],'HF'),
             self.select_data_from_array(data['ECG']['HRV'],'HF/P'),
             self.select_data_from_array(data['ECG']['HRV'],'HFn'),
@@ -71,11 +89,13 @@ class Extractor(object):
             self.select_data_from_array(data['ECG']['HRV'],'LF/P'),
             self.select_data_from_array(data['ECG']['HRV'],'LFn'),
             self.select_data_from_array(data['ECG']['HRV'],'RMSSD'),
+            self.select_data_from_array(data['ECG']['HRV'],'Shannon'),
             self.select_data_from_array(data['ECG']['HRV'],'Shannon_h'),
             self.select_data_from_array(data['ECG']['HRV'],'Total_Power'),
             self.select_data_from_array(data['ECG']['HRV'],'Triang'),
             self.select_data_from_array(data['ECG']['HRV'],'ULF'),
             self.select_data_from_array(data['ECG']['HRV'],'VHF'),
+            self.select_data_from_array(data['ECG']['HRV'],'VLF'),
             self.select_data_from_array(data['ECG']['HRV'],'cvNN'),
             self.select_data_from_array(data['ECG']['HRV'],'madNN'),
             self.select_data_from_array(data['ECG']['HRV'],'mcvNN'),
@@ -92,13 +112,12 @@ class Extractor(object):
     def extract_resp(self, data_resp):
         default_features = self.extract_default_features(data_resp)
         data = nk.rsp_process(data_resp, 700)
-        print(data)
+        default_features.extend([
+            self.select_data_from_array(data['RSP']['Respiratory_Variability'],'RSPV_RMSSD'),
+            self.select_data_from_array(data['RSP']['Respiratory_Variability'],'RSPV_RMSSD_Log'),
+            self.select_data_from_array(data['RSP']['Respiratory_Variability'],'RSPV_SD'),
+        ])
         return default_features
-            # ,
-            # data['RSP']['Respiratory_Variability']['RSPV_RMSSD'],
-            # data['RSP']['Respiratory_Variability']['RSPV_RMSSD_Log'],
-            # data['RSP']['Respiratory_Variability']['RSPV_SD']
-        # ])
 
     def extract_eda(self, data):
         return []
@@ -140,7 +159,6 @@ class Extractor(object):
                 data_window.append(data[i])
 
             if ((i == data_size and len(data_window) > 0) or (i > 0 and (len(data_window) % registers) == 0) or (label_anterior != labels[i] and len(data_window) > 0)):
-                # print('i={0}, total={1}',i,data_size)
                 all_features.append(self.extract_features(data_window, which))
                 window_labels.append(labels[i])
                 data_window = []
