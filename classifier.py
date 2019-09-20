@@ -42,13 +42,6 @@ def get_data(subject, data_type):
 
     return labels, features
 
-def decision_tree_classifier(training_data, training_labels, testing_data):
-    dt = DecisionTreeClassifier(random_state=0, max_depth=2)
-    dt = dt.fit(training_data, training_labels)
-    predictions = dt.predict(testing_data)
-
-    return predictions
-
 def random_forest_classifier(training_data, training_labels, testing_data):
     rf = RandomForestClassifier(n_estimators=100, max_depth=5, oob_score=True)
     rf = rf.fit(training_data, training_labels)
@@ -64,7 +57,7 @@ def svm_classifier(training_data, training_labels, testing_data):
     return predictions
 
 def knn_classifier(training_data, training_labels, testing_data):
-    nbrs = NearestNeighbors(n_neighbors=5, algorithm='ball_tree')
+    nbrs = NearestNeighbors(n_neighbors=5, algorithm='kd_tree')
     nbrs = nbrs.fit(training_data, training_labels)
     distances, indices = nbrs.kneighbors(testing_data)
     predictions = []
