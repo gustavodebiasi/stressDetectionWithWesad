@@ -9,6 +9,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.mixture import GaussianMixture
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import classification_report
+from sklearn.feature_selection import SelectKBest
 
 all_subjects = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17]
 # all_subjects = [2, 3]
@@ -30,7 +31,7 @@ def get_data(subject, data_type):
 
         labels2 = np.asarray(np.loadtxt('labels_20_True.txt'))
         labels.extend(labels2)
-        features2 = np.asarray(np.loadtxt('features_20_True.txt'))
+        features2 = np.asarray(np.loadtxt('features_20_True_selected.txt'))
         features.extend(features2)
 
     features = np.asarray(features)
@@ -45,6 +46,7 @@ def get_data(subject, data_type):
 def random_forest_classifier(training_data, training_labels, testing_data):
     rf = RandomForestClassifier(n_estimators=100, max_depth=5, oob_score=True)
     rf = rf.fit(training_data, training_labels)
+    rf.class_weight()
     predictions = rf.predict(testing_data)
 
     return predictions

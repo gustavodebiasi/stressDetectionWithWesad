@@ -32,6 +32,7 @@ class Extractor(object):
         var_kurtosis = kurtosis(data)
         var_skew = self.select_data_from_string(skew(data))
         var_range = self.select_data_from_string(var_max - var_min)
+        # var_diff1 = self.select_data_from_string(np.diff)
 
         return [
             np.float32(var_mean),
