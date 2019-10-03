@@ -1,9 +1,11 @@
+#%%
 import os
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 import neurokit as nk
 import pandas as pd
+from pandas import DataFrame
 from scipy.stats import kurtosis
 from scipy.stats import skew
 
@@ -65,21 +67,22 @@ class Extractor(object):
             return 0.
 
     def extract_ecg(self, data_ecg):
-        data = nk.ecg_process(ecg=data_ecg, rsp=None, sampling_rate=700, filter_type='FIR', filter_band='bandpass', filter_frequency=[3,45], segmenter='hamilton', quality_model='default', hrv_features=['time', 'frequency', 'nonlinear'])
-        ecg_filtered = np.asarray(data['df']['ECG_Filtered'])
-        default_features = self.extract_default_features(ecg_filtered)
+        data = nk.ecg_process(ecg=data_ecg, rsp=None, sampling_rate=700)
+        # data = nk.ecg_process(ecg=data_ecg, rsp=None, sampling_rate=700, filter_type='butter', filter_band='bandpass', filter_frequency=[3,45], segmenter='hamilton', quality_model='default', hrv_features=['time', 'frequency', 'nonlinear'])
+        # ecg_filtered = np.asarray(data['df']['ECG_Filtered'])
+        default_features = self.extract_default_features(data_ecg)
         default_features.extend([
             self.select_data_from_array(data['ECG']['HRV'],'CVSD'),
             self.select_data_from_array(data['ECG']['HRV'],'Correlation_Dimension'),
             self.select_data_from_array(data['ECG']['HRV'],'DFA_1'),
             self.select_data_from_array(data['ECG']['HRV'],'DFA_2'),
-            self.select_data_from_array(data['ECG']['HRV'],'Entropy_multiscale_AUC'),
-            self.select_data_from_array(data['ECG']['HRV'],'Entropy_SVD'),
-            self.select_data_from_array(data['ECG']['HRV'],'Entropy_Spectral_HF'),
-            self.select_data_from_array(data['ECG']['HRV'],'Entropy_Spectral_LF'),
-            self.select_data_from_array(data['ECG']['HRV'],'Entropy_Spectral_VLF'),
-            self.select_data_from_array(data['ECG']['HRV'],'FD_Higushi'),
-            self.select_data_from_array(data['ECG']['HRV'],'Fisher_Info'),
+            # self.select_data_from_array(data['ECG']['HRV'],'Entropy_multiscale_AUC'),
+            # self.select_data_from_array(data['ECG']['HRV'],'Entropy_SVD'),
+            # self.select_data_from_array(data['ECG']['HRV'],'Entropy_Spectral_HF'),
+            # self.select_data_from_array(data['ECG']['HRV'],'Entropy_Spectral_LF'),
+            # self.select_data_from_array(data['ECG']['HRV'],'Entropy_Spectral_VLF'),
+            # self.select_data_from_array(data['ECG']['HRV'],'FD_Higushi'),
+            # self.select_data_from_array(data['ECG']['HRV'],'Fisher_Info'),
             self.select_data_from_array(data['ECG']['HRV'],'HF'),
             self.select_data_from_array(data['ECG']['HRV'],'HF/P'),
             self.select_data_from_array(data['ECG']['HRV'],'HFn'),
@@ -88,9 +91,9 @@ class Extractor(object):
             self.select_data_from_array(data['ECG']['HRV'],'LF/P'),
             self.select_data_from_array(data['ECG']['HRV'],'LFn'),
             self.select_data_from_array(data['ECG']['HRV'],'RMSSD'),
-            self.select_data_from_array(data['ECG']['HRV'],'Shannon'),
-            self.select_data_from_array(data['ECG']['HRV'],'Shannon_h'),
-            self.select_data_from_array(data['ECG']['HRV'],'Total_Power'),
+            # self.select_data_from_array(data['ECG']['HRV'],'Shannon'),
+            # self.select_data_from_array(data['ECG']['HRV'],'Shannon_h'),
+            # self.select_data_from_array(data['ECG']['HRV'],'Total_Power'),
             self.select_data_from_array(data['ECG']['HRV'],'Triang'),
             self.select_data_from_array(data['ECG']['HRV'],'ULF'),
             self.select_data_from_array(data['ECG']['HRV'],'VHF'),
@@ -100,7 +103,6 @@ class Extractor(object):
             self.select_data_from_array(data['ECG']['HRV'],'mcvNN'),
             self.select_data_from_array(data['ECG']['HRV'],'meanNN'),
             self.select_data_from_array(data['ECG']['HRV'],'medianNN'),
-            self.select_data_from_array(data['ECG']['HRV'],'n_Artifacts'),
             self.select_data_from_array(data['ECG']['HRV'],'pNN20'),
             self.select_data_from_array(data['ECG']['HRV'],'pNN50'),
             self.select_data_from_array(data['ECG']['HRV'],'sdNN'),
@@ -109,8 +111,12 @@ class Extractor(object):
         return default_features
 
     def extract_resp(self, data_resp):
-        data = nk.rsp_process(data_resp, 700)
-        default_features = self.extract_default_features(data['df']['RSP_Filtered'])
+        try:
+            data = nk.rsp_process(data_resp, 700)
+        except:
+            return False 
+
+        default_features = self.extract_default_features(data_resp)
         default_features.extend([
             self.select_data_from_array(data['RSP']['Respiratory_Variability'],'RSPV_RMSSD'),
             self.select_data_from_array(data['RSP']['Respiratory_Variability'],'RSPV_RMSSD_Log'),
@@ -118,10 +124,29 @@ class Extractor(object):
         ])
         return default_features
 
-    def extract_eda(self, data_eda):
-        data = nk.eda_process(data_eda, 700)
-        default_features = self.extract_default_features(data['df']['EDA_Filtered'])
-        return default_features
+    def extract_eda(self, data_eda, label):
+        # try:
+        # if (label != 2):
+            # return False
+        # data = nk.eda_process(data_eda, 700)
+        
+        # nk.z_score(data["df"]).plot()
+        # df = DataFrame(data["df"])
+        # df = DataFrame({
+        #     'Normal': data["df"]["EDA_Raw"],
+        #     'Filtrado': data["df"]["EDA_Filtered"]
+        # })
+        # df.plot(kind = 'line')
+        # for i in data["df"]["SCR_Peaks"]:
+        #     plt.axvline(x=i)
+
+        # plt.show() 
+        # except:
+            # print(data_eda)
+            # return False
+
+        return self.extract_default_features(data_eda)
+        # return default_features
 
     # def extract_temp(self, data):
     #     return []
@@ -132,20 +157,15 @@ class Extractor(object):
             os.makedirs(device + '_' + which)
         return data
 
-    def extract_features(self, data_window, which):
+    def extract_features(self, data_window, which, label):
         if (which == 'eda'):
-            return self.extract_eda(data_window)
+            return self.extract_eda(data_window, label)
         elif (which == 'resp'):
             return self.extract_resp(data_window)
         elif (which == 'ecg'):
             return self.extract_ecg(data_window)
         elif (which == 'emg'):
             return self.extract_emg(data_window)
-        # elif (which == 'temp'):
-        #     return self.extract_default_features(data_window)
-        # elif (which == 'bvp'):
-        #     return self.extract_default_features(data_window)
-
 
     def process(self, labels, device, which, registers):
         data = self.read_file(device, which)
@@ -160,8 +180,11 @@ class Extractor(object):
                 data_window.append(data[i])
 
             if ((i == data_size and len(data_window) > 0) or (i > 0 and (len(data_window) % registers) == 0) or (label_anterior != labels[i] and len(data_window) > 0)):
-                all_features.append(self.extract_features(data_window, which))
-                window_labels.append(labels[i])
+                result = self.extract_features(data_window, which, labels[i])
+                if (result):
+                    all_features.append(result)
+                    window_labels.append(labels[i])
+
                 data_window = []
                 
                 if (i != data_size and self.window_overlap and len(data_window) % registers == 0 and label_anterior == labels[i]):
@@ -191,10 +214,10 @@ class Extractor(object):
         
             labels700 = np.loadtxt('chest_labels_filtered.txt')
 
-            self.process(labels700, 'chest', 'eda', self.registers700)
-            self.process(labels700, 'chest', 'resp', self.registers700)
             self.process(labels700, 'chest', 'ecg', self.registers700)
+            self.process(labels700, 'chest', 'resp', self.registers700)
             self.process(labels700, 'chest', 'emg', self.registers700)
+            self.process(labels700, 'chest', 'eda', self.registers700)
             # labels4 = np.loadtxt('labels_4.txt')
             # self.process(labels4, 'wrist', 'eda', self.registers4)
 
@@ -209,9 +232,11 @@ if __name__ == '__main__':
     window = 20
     window_overlap = True
     path = '/Volumes/My Passport/TCC/WESAD/'
+    # subjects = [2]
     subjects = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17]
-    # subjects = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17]
     extract = Extractor()
     extract.execute(path, window, window_overlap, subjects)
     
     
+
+#%%

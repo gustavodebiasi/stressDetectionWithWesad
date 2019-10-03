@@ -31,7 +31,7 @@ def get_data(subject, data_type):
 
         labels2 = np.asarray(np.loadtxt('labels_20_True.txt'))
         labels.extend(labels2)
-        features2 = np.asarray(np.loadtxt('features_20_True_selected.txt'))
+        features2 = np.asarray(np.loadtxt('features_20_True_pca.txt'))
         features.extend(features2)
 
     features = np.asarray(features)
@@ -93,7 +93,7 @@ def print_results(predictions, testing_labels):
 
 def execute():
     rf = RandomForestClassifier(n_estimators=100, max_depth=5, oob_score=True)
-    clf = svm.SVC(gamma='scale')
+    clf = svm.SVC(gamma='auto')
 
     predictsRF = []
     predictsCLF = []

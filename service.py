@@ -6,24 +6,22 @@ from Enums.Types import Types
 
 class Service(object):
 
-    RUN_READER = True
-    RUN_EXTRACTOR = False
+    RUN_READER = False
+    RUN_EXTRACTOR = True
     RUN_SELECTOR = False
     RUN_SHOOTER = False
 
     BASE_PATH = '/Volumes/My Passport/TCC/WESAD/'
-    BASE_SUBJECTS = [2]
-    # SUBJECTS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17]
+    # BASE_SUBJECTS = [2]
+    BASE_SUBJECTS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17]
 
     # Reader Variables
     READER_PATH = BASE_PATH
     READER_TYPES = [
         Types.BASELINE.value,
-        Types.STRESS.value,
-        Types.AMUSEMENT.value,
+        Types.STRESS.value
     ]
     READER_SUBJECTS = BASE_SUBJECTS
-
 
     # Extractor Variables
     EXTRACTOR_PATH = BASE_PATH
@@ -48,8 +46,24 @@ class Service(object):
             read.execute(self.READER_PATH, self.READER_TYPES, self.READER_SUBJECTS)
 
         if (self.RUN_EXTRACTOR):
-            extract = Extractor
-            extract.execute(self.EXTRACTOR_PATH, self.EXTRACTOR_WINDOW_SIZE, self.EXTRACTOR_WINDOW_OVERLAP, self.EXTRACTOR_SUBJECTS)
+            print('3')
+            extract = Extractor()
+            extract.execute(base_path=self.EXTRACTOR_PATH, window=20, window_overlap=True, subjects=self.EXTRACTOR_SUBJECTS)
+
+        if (self.RUN_EXTRACTOR):
+            print('4')
+            extract = Extractor()
+            extract.execute(base_path=self.EXTRACTOR_PATH, window=20, window_overlap=False, subjects=self.EXTRACTOR_SUBJECTS)
+
+        if (self.RUN_EXTRACTOR):
+            print('1')
+            extract = Extractor()
+            extract.execute(base_path=self.EXTRACTOR_PATH, window=30, window_overlap=True, subjects=self.EXTRACTOR_SUBJECTS)
+
+        if (self.RUN_EXTRACTOR):
+            print('2')
+            extract = Extractor()
+            extract.execute(base_path=self.EXTRACTOR_PATH, window=30, window_overlap=False, subjects=self.EXTRACTOR_SUBJECTS)
 
         # if (RUN_SELECTOR):
         #     select = Selector
