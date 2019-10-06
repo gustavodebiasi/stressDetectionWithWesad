@@ -30,15 +30,16 @@ class Selector(object):
         # indexes = selection.get_support()
         principalDf = pd.DataFrame(data = principalComponents)
         exp = pca_select.explained_variance_ratio_
-        print(exp)
-        exit
+        # for e in exp:
+            # print('%.9f' % (e * 100))
+        # print(exp)
+        # '''
         # print(quantities)
         # print(quantities.get(subject))
         # print(principalDf)
         # print(principalDf[0][0])
         # print(principalDf[0][1])
         # print(len(principalDf))
-        '''
         quantity_sj = 0
         j = 0
         for i in subjects:
@@ -69,10 +70,10 @@ class Selector(object):
                     principalDf[1][j],
                     principalDf[2][j],
                     principalDf[3][j],
-                    principalDf[4][j],
-                    principalDf[5][j],
-                    principalDf[6][j],
-                    principalDf[7][j],
+                    # principalDf[4][j],
+                    # principalDf[5][j],
+                    # principalDf[6][j],
+                    # principalDf[7][j],
                 ])
                 j += 1
             quantity_sj+=quantities.get(subject)
@@ -81,7 +82,7 @@ class Selector(object):
             np.savetxt(base_path + subject + '/data/chest_' + signal + '/features_' + str(window) + '_' + str(window_overlap) + '_pca.txt', new_features_pca, fmt="%f")
         #     break
         print('terminou')
-        '''
+        # '''
 
 
 
@@ -91,7 +92,7 @@ from selector import Selector
 if __name__ == '__main__':
     subjects = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17]
     base_path = '/Volumes/My Passport/TCC/WESAD/'
-    signal = 'ecg'
+    signal = 'eda'
     window = 20
     window_overlap = True
     select = Selector()

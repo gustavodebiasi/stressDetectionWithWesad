@@ -1,7 +1,7 @@
 from reader import Reader
 from extractor import Extractor
-# from selector import Selector
-# from shooter import Shooter
+from selector import Selector
+from shooter import Shooter
 from Enums.Types import Types
 
 class Service(object):

@@ -1,20 +1,21 @@
-class Shooter:
-    def choose(first_classifier, second_classifier, third_classifier):
+class Shooter(object):
+    def choose(self, first_classifier, second_classifier, third_classifier):
         results = []
-        for k,v in first_classifier:
+        i = 0
+        for i in range(len(first_classifier)):
             stress = 0
             no_stress = 0
-            if (first_classifier[k] == 1.0):
+            if (first_classifier[i] == 1.0):
                 no_stress += 1
             else:
                 stress += 1
 
-            if (second_classifier[k] == 1.0):
+            if (second_classifier[i] == 1.0):
                 no_stress += 1
             else:
                 stress += 1
 
-            if (third_classifier[k] == 1.0):
+            if (third_classifier[i] == 1.0):
                 no_stress += 1
             else:
                 stress += 1

@@ -10,6 +10,7 @@ from sklearn.mixture import GaussianMixture
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import classification_report
 from sklearn.feature_selection import SelectKBest
+from shooter import Shooter
 
 all_subjects = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17]
 # all_subjects = [2, 3]
@@ -26,7 +27,7 @@ def get_data(subject, data_type):
     
     for i in subjects:
         subject = 'S' + str(i)
-        path = '/Volumes/My Passport/TCC/WESAD/' + subject + '/data/chest_ecg/'
+        path = '/Volumes/My Passport/TCC/WESAD/' + subject + '/data/chest_eda/'
         os.chdir(path)
 
         labels2 = np.asarray(np.loadtxt('labels_20_True.txt'))
@@ -119,6 +120,9 @@ def execute():
         # print(training_features.shape)
         # print(training_features)
         # print(training_labels)
+
+        # testing_features.reshape(-1, 1)
+        # training_features.reshape(-1, 1)
         
         rf = rf.fit(training_features, training_labels)
         predictions = rf.predict(testing_features)
@@ -141,12 +145,17 @@ def execute():
         predictsNBRS.extend(predictions)
         # print_results(predictions, testing_labels)
 
+    shoot = Shooter()
+    new_results = shoot.choose(predictsRF, predictsNBRS, predictsCLF)
+
     print('RF')
     print_results(predictsRF, testings)
     print('SVM')
     print_results(predictsCLF, testings)
     print('KNN')
     print_results(predictsNBRS, testings)
+    print('Shooter')
+    print_results(new_results, testings)
 
 if __name__ == '__main__':
     execute()

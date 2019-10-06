@@ -69,7 +69,11 @@ class Extractor(object):
     def extract_ecg(self, data_ecg):
         data = nk.ecg_process(ecg=data_ecg, rsp=None, sampling_rate=700)
         # data = nk.ecg_process(ecg=data_ecg, rsp=None, sampling_rate=700, filter_type='butter', filter_band='bandpass', filter_frequency=[3,45], segmenter='hamilton', quality_model='default', hrv_features=['time', 'frequency', 'nonlinear'])
+        # print(data)
+
         # ecg_filtered = np.asarray(data['df']['ECG_Filtered'])
+        # ecg_filtered = np.asarray(data['ECG']['R_Peaks'])
+        # default_features = self.extract_default_features(ecg_filtered)
         default_features = self.extract_default_features(data_ecg)
         default_features.extend([
             self.select_data_from_array(data['ECG']['HRV'],'CVSD'),
@@ -93,7 +97,7 @@ class Extractor(object):
             self.select_data_from_array(data['ECG']['HRV'],'RMSSD'),
             # self.select_data_from_array(data['ECG']['HRV'],'Shannon'),
             # self.select_data_from_array(data['ECG']['HRV'],'Shannon_h'),
-            # self.select_data_from_array(data['ECG']['HRV'],'Total_Power'),
+            self.select_data_from_array(data['ECG']['HRV'],'Total_Power'),
             self.select_data_from_array(data['ECG']['HRV'],'Triang'),
             self.select_data_from_array(data['ECG']['HRV'],'ULF'),
             self.select_data_from_array(data['ECG']['HRV'],'VHF'),
@@ -125,28 +129,15 @@ class Extractor(object):
         return default_features
 
     def extract_eda(self, data_eda, label):
-        # try:
-        # if (label != 2):
-            # return False
-        # data = nk.eda_process(data_eda, 700)
-        
-        # nk.z_score(data["df"]).plot()
-        # df = DataFrame(data["df"])
-        # df = DataFrame({
-        #     'Normal': data["df"]["EDA_Raw"],
-        #     'Filtrado': data["df"]["EDA_Filtered"]
-        # })
-        # df.plot(kind = 'line')
-        # for i in data["df"]["SCR_Peaks"]:
-        #     plt.axvline(x=i)
+        data = nk.eda_process(data_eda, 700)
 
-        # plt.show() 
-        # except:
-            # print(data_eda)
-            # return False
+        default_features = self.extract_default_features(data_eda)
+        default_features.extend([
+            np.mean(data['EDA']['SCR_Peaks_Amplitudes']),
+            (len(data['EDA']['SCR_Peaks_Indexes']) / len(data_eda))
+        ])
 
-        return self.extract_default_features(data_eda)
-        # return default_features
+        return default_features
 
     # def extract_temp(self, data):
     #     return []
@@ -214,9 +205,9 @@ class Extractor(object):
         
             labels700 = np.loadtxt('chest_labels_filtered.txt')
 
-            self.process(labels700, 'chest', 'ecg', self.registers700)
-            self.process(labels700, 'chest', 'resp', self.registers700)
-            self.process(labels700, 'chest', 'emg', self.registers700)
+            # self.process(labels700, 'chest', 'ecg', self.registers700)
+            # self.process(labels700, 'chest', 'resp', self.registers700)
+            # self.process(labels700, 'chest', 'emg', self.registers700)
             self.process(labels700, 'chest', 'eda', self.registers700)
             # labels4 = np.loadtxt('labels_4.txt')
             # self.process(labels4, 'wrist', 'eda', self.registers4)
@@ -232,8 +223,8 @@ if __name__ == '__main__':
     window = 20
     window_overlap = True
     path = '/Volumes/My Passport/TCC/WESAD/'
-    # subjects = [2]
     subjects = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17]
+    # subjects = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17]
     extract = Extractor()
     extract.execute(path, window, window_overlap, subjects)
     
