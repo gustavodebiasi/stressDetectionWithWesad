@@ -12,151 +12,166 @@ from sklearn.metrics import classification_report
 from sklearn.feature_selection import SelectKBest
 from shooter import Shooter
 
-all_subjects = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17]
-# all_subjects = [2, 3]
+class Classifier(object):
+    subjects = []
+    window = 0
+    window_overlap = False
+    selector = ''
 
-def get_data(subject, data_type):
-    features = []
-    labels = []
-    print()
-    if (data_type == 'training'):
-        subjects = all_subjects[:]
-        subjects.remove(subject)
-    else:
-        subjects = [subject]
-    
-    for i in subjects:
-        subject = 'S' + str(i)
-        path = '/Volumes/My Passport/TCC/WESAD/' + subject + '/data/chest_eda/'
-        os.chdir(path)
-
-        labels2 = np.asarray(np.loadtxt('labels_20_True.txt'))
-        labels.extend(labels2)
-        features2 = np.asarray(np.loadtxt('features_20_True_pca.txt'))
-        features.extend(features2)
-
-    features = np.asarray(features)
-    i = 0
-    for i in range(len(labels)):
-        if (int(labels[i]) == 3):
-            labels[i] = 1
-    labels = np.asarray(labels)
-
-    return labels, features
-
-def random_forest_classifier(training_data, training_labels, testing_data):
-    rf = RandomForestClassifier(n_estimators=100, max_depth=5, oob_score=True)
-    rf = rf.fit(training_data, training_labels)
-    rf.class_weight()
-    predictions = rf.predict(testing_data)
-
-    return predictions
-
-def svm_classifier(training_data, training_labels, testing_data):
-    clf = svm.SVC(gamma='scale')
-    clf = clf.fit(training_data, training_labels)
-    predictions = clf.predict(testing_data)
-
-    return predictions
-
-def knn_classifier(training_data, training_labels, testing_data):
-    nbrs = NearestNeighbors(n_neighbors=5, algorithm='kd_tree')
-    nbrs = nbrs.fit(training_data, training_labels)
-    distances, indices = nbrs.kneighbors(testing_data)
-    predictions = []
-    for indice in indices:
-        i = 0
-        count_stress = 0
-        for i in range(len(indice)):
-            if (training_labels[indice[i]] == 2.0):
-                count_stress += 1
-        if (count_stress >= 3):
-            predictions.append(2.)
+    def get_data(self, base_path, signal, subject, data_type):
+        features = []
+        labels = []
+        if (data_type == 'training'):
+            subjects = self.subjects[:]
+            subjects.remove(subject)
         else:
-            predictions.append(1.)
-
-    return predictions
-
-def calc_sensibility(confusion):
-    return (confusion[0][0] / (confusion[0][0] + confusion[1][0]))
-
-def calc_specificity(confusion):
-    return (confusion[1][1] / (confusion[1][1] + confusion[0][1]))
-
-def print_results(predictions, testing_labels):
-    # print('Predictions = ', predictions)
-    print('acuracy= ', accuracy_score(testing_labels, predictions))
-    matrix = confusion_matrix(testing_labels, predictions)
-    print('matrix = ', matrix)
-    print('sensibility= ', calc_sensibility(matrix))
-    print('specificity= ', calc_specificity(matrix))
-    print('--------------------------------')
-
-def execute():
-    rf = RandomForestClassifier(n_estimators=100, max_depth=5, oob_score=True)
-    clf = svm.SVC(gamma='auto')
-
-    predictsRF = []
-    predictsCLF = []
-    predictsNBRS = []
-    testings = []
-    
-    for sub in all_subjects:
-    # for sub in [17]:
-        print('sujeito = ', sub)
-        training_labels, training_features = get_data(sub, 'training')
-        testing_labels, testing_features = get_data(sub, 'testing')
-
-        testings.extend(testing_labels)
-
-        # print('labels true = ', testing_labels)
-        # dt = dt.fit(training_features, training_labels)
-        # predictions = dt.predict(testing_features)
-        # print('--------------------------------')
-        # print('DECISION TREE ', sub)
-        # print_results(predictions, testing_labels)
-
-        # predictions = random_forest_classifier(training_features, training_labels, testing_features)
-        # print(training_features.shape)
-        # print(training_features)
-        # print(training_labels)
-
-        # testing_features.reshape(-1, 1)
-        # training_features.reshape(-1, 1)
+            subjects = [subject]
         
-        rf = rf.fit(training_features, training_labels)
-        predictions = rf.predict(testing_features)
-        predictsRF.extend(predictions)
-        # print('--------------------------------')
-        # print('RANDOM FOREST ', sub)
-        # print_results(predictions, testing_labels)
+        for i in subjects:
+            subject = 'S' + str(i)
+            path = base_path + subject + '/data/chest_' + signal + '/'
+            os.chdir(path)
 
-        # predictions = svm_classifier(training_features, training_labels, testing_features)
-        clf = clf.fit(training_features, training_labels)
-        predictions = clf.predict(testing_features)
-        predictsCLF.extend(predictions)
-        # print('--------------------------------')
-        # print('SVM ', sub)
-        # print_results(predictions, testing_labels)
-        # KNN -
-        # print('--------------------------------')
-        # print('KNN ', sub)
-        predictions = knn_classifier(training_features, training_labels, testing_features)
-        predictsNBRS.extend(predictions)
-        # print_results(predictions, testing_labels)
+            labels2 = np.asarray(np.loadtxt('labels_' + str(self.window) + '_' + str(self.window_overlap) + '.txt'))
+            labels.extend(labels2)
+            features2 = np.asarray(np.loadtxt('features_' + str(self.window) + '_' + str(self.window_overlap) + '_' + self.selector + '.txt'))
+            features.extend(features2)
 
-    shoot = Shooter()
-    new_results = shoot.choose(predictsRF, predictsNBRS, predictsCLF)
+        features = np.asarray(features)
+        i = 0
+        for i in range(len(labels)):
+            if (int(labels[i]) == 3):
+                labels[i] = 1
+        labels = np.asarray(labels)
 
-    print('RF')
-    print_results(predictsRF, testings)
-    print('SVM')
-    print_results(predictsCLF, testings)
-    print('KNN')
-    print_results(predictsNBRS, testings)
-    print('Shooter')
-    print_results(new_results, testings)
+        return labels, features
+
+    def random_forest_classifier(self, training_data, training_labels, testing_data):
+        rf = RandomForestClassifier(n_estimators=100, max_depth=5, oob_score=True)
+        rf = rf.fit(training_data, training_labels)
+        rf.class_weight()
+        predictions = rf.predict(testing_data)
+
+        return predictions
+
+    def svm_classifier(self, training_data, training_labels, testing_data):
+        clf = svm.SVC(gamma='scale')
+        clf = clf.fit(training_data, training_labels)
+        predictions = clf.predict(testing_data)
+
+        return predictions
+
+    def knn_classifier(self, training_data, training_labels, testing_data):
+        nbrs = NearestNeighbors(n_neighbors=5, algorithm='kd_tree')
+        nbrs = nbrs.fit(training_data, training_labels)
+        distances, indices = nbrs.kneighbors(testing_data)
+        predictions = []
+        for indice in indices:
+            i = 0
+            count_stress = 0
+            for i in range(len(indice)):
+                if (training_labels[indice[i]] == 2.0):
+                    count_stress += 1
+            if (count_stress >= 3):
+                predictions.append(2.)
+            else:
+                predictions.append(1.)
+
+        return predictions
+
+    def calc_sensibility(self, confusion):
+        return (confusion[0][0] / (confusion[0][0] + confusion[1][0]))
+
+    def calc_specificity(self, confusion):
+        return (confusion[1][1] / (confusion[1][1] + confusion[0][1]))
+
+    def print_results(self, predictions, testing_labels):
+        # print('Predictions = ', predictions)
+        print('acuracy= ', accuracy_score(testing_labels, predictions))
+        matrix = confusion_matrix(testing_labels, predictions)
+        print('matrix = ', matrix)
+        print('sensibility= ', self.calc_sensibility(matrix))
+        print('specificity= ', self.calc_specificity(matrix))
+        print('--------------------------------')
+
+    def execute(self, base_path, signal, subjects, window, window_overlap, selector):
+        self.subjects = subjects
+        self.window = window
+        self.window_overlap = window_overlap
+        self.selector = selector
+        rf = RandomForestClassifier(n_estimators=100, max_depth=5, oob_score=True)
+        clf = svm.SVC(gamma='auto')
+
+        predictsRF = []
+        predictsCLF = []
+        predictsNBRS = []
+        testings = []
+        
+        for sub in subjects:
+            print('sujeito = ', sub)
+            training_labels, training_features = self.get_data(base_path, signal, sub, 'training')
+            testing_labels, testing_features = self.get_data(base_path, signal, sub, 'testing')
+
+            testings.extend(testing_labels)
+
+            # print('labels true = ', testing_labels)
+            # dt = dt.fit(training_features, training_labels)
+            # predictions = dt.predict(testing_features)
+            # print('--------------------------------')
+            # print('DECISION TREE ', sub)
+            # self.print_results(predictions, testing_labels)
+
+            # predictions = random_forest_classifier(training_features, training_labels, testing_features)
+            # print(training_features.shape)
+            # print(training_features)
+            # print(training_labels)
+
+            # testing_features.reshape(-1, 1)
+            # training_features.reshape(-1, 1)
+            
+            rf = rf.fit(training_features, training_labels)
+            predictions = rf.predict(testing_features)
+            predictsRF.extend(predictions)
+            # print('--------------------------------')
+            # print('RANDOM FOREST ', sub)
+            # self.print_results(predictions, testing_labels)
+
+            # predictions = svm_classifier(training_features, training_labels, testing_features)
+            clf = clf.fit(training_features, training_labels)
+            predictions = clf.predict(testing_features)
+            predictsCLF.extend(predictions)
+            # print('--------------------------------')
+            # print('SVM ', sub)
+            # self.print_results(predictions, testing_labels)
+            # KNN -
+            # print('--------------------------------')
+            # print('KNN ', sub)
+            predictions = self.knn_classifier(training_features, training_labels, testing_features)
+            predictsNBRS.extend(predictions)
+            # self.print_results(predictions, testing_labels)
+
+        shoot = Shooter()
+        new_results = shoot.choose(predictsRF, predictsNBRS, predictsCLF)
+
+        print('RF')
+        self.print_results(predictsRF, testings)
+        print('SVM')
+        self.print_results(predictsCLF, testings)
+        print('KNN')
+        self.print_results(predictsNBRS, testings)
+        print('Shooter')
+        self.print_results(new_results, testings)
+
+from classifier import Classifier
 
 if __name__ == '__main__':
-    execute()
+    subjects = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17]
+    # all_subjects = [2, 3]
+    signal = 'ecg'
+    base_path = '/Volumes/My Passport/TCC/WESAD/'
+    window = 20
+    window_overlap = True
+    selector = 'pca'
+    classification = Classifier()
+    classification.execute(base_path, signal, subjects, window, window_overlap, selector)
     
