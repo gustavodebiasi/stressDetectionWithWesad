@@ -5,9 +5,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import neurokit as nk
 import pandas as pd
+import math  
 from pandas import DataFrame
 from scipy.stats import kurtosis
 from scipy.stats import skew
+from statsmodels import robust
 
 class Extractor(object):
     registers700 = 0
@@ -48,11 +50,61 @@ class Extractor(object):
             np.float32(var_range)
         ]
 
+    def extract_root_mean_square(self, data):
+        data_sum = 0
+        for i in range(len(data)):
+            data_sum += data[i] ** 2
+            
+        data_no_root = data_sum / len(data) 
+        return math.sqrt(data_no_root)
+    
+    def extract_mean_absolute_deviation(self, data):
+        return robust.mad(data)
+
+    def extract_mean_absolute_value(self, data):
+        data_sum = 0
+        for i in range(len(data)):
+            data_sum += abs(data[i])
+
+        return data_sum / len(data)
+
+    def extract_slope_sign_change(self, data):
+        data_sum = 0
+        i = 1
+        data_size = len(data) - 1
+        while (i < data_size):
+            if ((data[i] < data[i+1] and data[i] < data[i-1]) or (data[i] > data[i+1] and data[i] > data[i-1])):
+                data_sum += 1
+                
+            i += 1
+
+        return data_sum
+        # return (data_sum / len(data))
+
+    def extract_zero_crossing(self, data):
+        data_sum = 0
+        i = 0
+        data_size = len(data) - 1
+        while (i < data_size):
+            if ((data[i] > 0 and data[i+1] < 0) or (data[i] < 0 and data[i+1] > 0)):
+                data_sum += 1
+                
+            i += 1
+
+        return data_sum
+        # return (data_sum / len(data))
+
     def extract_emg(self, data_emg):
-        return self.extract_default_features(data_emg)
-        # if (len(data_emg) <= 15):
-        #     return []
-        # return nk.emg_process(data_emg, 700, envelope_freqs=[10, 300])
+        default_features = self.extract_default_features(data_emg)
+        rms = self.extract_root_mean_square(data_emg)
+        default_features.extend([
+            rms,
+            np.log(rms),
+            self.extract_mean_absolute_value(data_emg),
+            self.extract_slope_sign_change(data_emg),
+            self.extract_zero_crossing(data_emg),
+        ])
+        return default_features
 
     def select_data_from_string(self, string):
         if (np.isnan(string)):
@@ -69,24 +121,13 @@ class Extractor(object):
     def extract_ecg(self, data_ecg):
         data = nk.ecg_process(ecg=data_ecg, rsp=None, sampling_rate=700)
         # data = nk.ecg_process(ecg=data_ecg, rsp=None, sampling_rate=700, filter_type='butter', filter_band='bandpass', filter_frequency=[3,45], segmenter='hamilton', quality_model='default', hrv_features=['time', 'frequency', 'nonlinear'])
-        # print(data)
 
-        # ecg_filtered = np.asarray(data['df']['ECG_Filtered'])
-        # ecg_filtered = np.asarray(data['ECG']['R_Peaks'])
-        # default_features = self.extract_default_features(ecg_filtered)
         default_features = self.extract_default_features(data_ecg)
         default_features.extend([
             self.select_data_from_array(data['ECG']['HRV'],'CVSD'),
             self.select_data_from_array(data['ECG']['HRV'],'Correlation_Dimension'),
             self.select_data_from_array(data['ECG']['HRV'],'DFA_1'),
             self.select_data_from_array(data['ECG']['HRV'],'DFA_2'),
-            # self.select_data_from_array(data['ECG']['HRV'],'Entropy_multiscale_AUC'),
-            # self.select_data_from_array(data['ECG']['HRV'],'Entropy_SVD'),
-            # self.select_data_from_array(data['ECG']['HRV'],'Entropy_Spectral_HF'),
-            # self.select_data_from_array(data['ECG']['HRV'],'Entropy_Spectral_LF'),
-            # self.select_data_from_array(data['ECG']['HRV'],'Entropy_Spectral_VLF'),
-            # self.select_data_from_array(data['ECG']['HRV'],'FD_Higushi'),
-            # self.select_data_from_array(data['ECG']['HRV'],'Fisher_Info'),
             self.select_data_from_array(data['ECG']['HRV'],'HF'),
             self.select_data_from_array(data['ECG']['HRV'],'HF/P'),
             self.select_data_from_array(data['ECG']['HRV'],'HFn'),
@@ -95,8 +136,6 @@ class Extractor(object):
             self.select_data_from_array(data['ECG']['HRV'],'LF/P'),
             self.select_data_from_array(data['ECG']['HRV'],'LFn'),
             self.select_data_from_array(data['ECG']['HRV'],'RMSSD'),
-            # self.select_data_from_array(data['ECG']['HRV'],'Shannon'),
-            # self.select_data_from_array(data['ECG']['HRV'],'Shannon_h'),
             self.select_data_from_array(data['ECG']['HRV'],'Total_Power'),
             self.select_data_from_array(data['ECG']['HRV'],'Triang'),
             self.select_data_from_array(data['ECG']['HRV'],'ULF'),
@@ -136,6 +175,7 @@ class Extractor(object):
             np.mean(data['EDA']['SCR_Peaks_Amplitudes']),
             (len(data['EDA']['SCR_Peaks_Indexes']) / len(data_eda))
         ])
+        print(data)
 
         return default_features
 
@@ -207,8 +247,8 @@ class Extractor(object):
 
             # self.process(labels700, 'chest', 'ecg', self.registers700)
             # self.process(labels700, 'chest', 'resp', self.registers700)
-            # self.process(labels700, 'chest', 'emg', self.registers700)
-            self.process(labels700, 'chest', 'eda', self.registers700)
+            self.process(labels700, 'chest', 'emg', self.registers700)
+            # self.process(labels700, 'chest', 'eda', self.registers700)
             # labels4 = np.loadtxt('labels_4.txt')
             # self.process(labels4, 'wrist', 'eda', self.registers4)
 
