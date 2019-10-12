@@ -24,6 +24,7 @@ class Service(object):
 
     # Selector Variables
     SELECTOR_SIGNALS = ['emg', 'resp', 'eda', 'ecg']
+    SELECTOR_SELECTION_TYPE = ['pca', 'lda']
 
     def run(self):
         if (self.RUN_READER):
@@ -37,7 +38,8 @@ class Service(object):
         if (RUN_SELECTOR):
             select = Selector()
             for sig in self.SELECTOR_SIGNALS:
-                select.execute(self.BASE_PATH, sig, self.BASE_SUBJECTS, self.BASE_WINDOW, self.WINDOW_OVERLAP)
+                for st in self.SELECTOR_SELECTION_TYPE:
+                    select.execute(self.BASE_PATH, sig, self.BASE_SUBJECTS, self.BASE_WINDOW, self.WINDOW_OVERLAP, st)
 
         if (RUN_CLASSIFIER):
             classification = Classifier()

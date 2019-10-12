@@ -125,9 +125,9 @@ class Extractor(object):
         default_features = self.extract_default_features(data_ecg)
         default_features.extend([
             self.select_data_from_array(data['ECG']['HRV'],'CVSD'),
-            self.select_data_from_array(data['ECG']['HRV'],'Correlation_Dimension'),
-            self.select_data_from_array(data['ECG']['HRV'],'DFA_1'),
-            self.select_data_from_array(data['ECG']['HRV'],'DFA_2'),
+            # self.select_data_from_array(data['ECG']['HRV'],'Correlation_Dimension'),
+            # self.select_data_from_array(data['ECG']['HRV'],'DFA_1'),
+            # self.select_data_from_array(data['ECG']['HRV'],'DFA_2'),
             self.select_data_from_array(data['ECG']['HRV'],'HF'),
             self.select_data_from_array(data['ECG']['HRV'],'HF/P'),
             self.select_data_from_array(data['ECG']['HRV'],'HFn'),
@@ -138,9 +138,9 @@ class Extractor(object):
             self.select_data_from_array(data['ECG']['HRV'],'RMSSD'),
             self.select_data_from_array(data['ECG']['HRV'],'Total_Power'),
             self.select_data_from_array(data['ECG']['HRV'],'Triang'),
-            self.select_data_from_array(data['ECG']['HRV'],'ULF'),
+            # self.select_data_from_array(data['ECG']['HRV'],'ULF'),
             self.select_data_from_array(data['ECG']['HRV'],'VHF'),
-            self.select_data_from_array(data['ECG']['HRV'],'VLF'),
+            # self.select_data_from_array(data['ECG']['HRV'],'VLF'),
             self.select_data_from_array(data['ECG']['HRV'],'cvNN'),
             self.select_data_from_array(data['ECG']['HRV'],'madNN'),
             self.select_data_from_array(data['ECG']['HRV'],'mcvNN'),
@@ -175,7 +175,6 @@ class Extractor(object):
             np.mean(data['EDA']['SCR_Peaks_Amplitudes']),
             (len(data['EDA']['SCR_Peaks_Indexes']) / len(data_eda))
         ])
-        print(data)
 
         return default_features
 
@@ -245,9 +244,9 @@ class Extractor(object):
         
             labels700 = np.loadtxt('chest_labels_filtered.txt')
 
-            # self.process(labels700, 'chest', 'ecg', self.registers700)
+            self.process(labels700, 'chest', 'ecg', self.registers700)
             # self.process(labels700, 'chest', 'resp', self.registers700)
-            self.process(labels700, 'chest', 'emg', self.registers700)
+            # self.process(labels700, 'chest', 'emg', self.registers700)
             # self.process(labels700, 'chest', 'eda', self.registers700)
             # labels4 = np.loadtxt('labels_4.txt')
             # self.process(labels4, 'wrist', 'eda', self.registers4)
@@ -263,7 +262,7 @@ if __name__ == '__main__':
     window = 20
     window_overlap = True
     path = '/Volumes/My Passport/TCC/WESAD/'
-    subjects = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17]
+    subjects = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
     # subjects = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17]
     extract = Extractor()
     extract.execute(path, window, window_overlap, subjects)

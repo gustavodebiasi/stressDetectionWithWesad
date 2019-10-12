@@ -34,7 +34,8 @@ class Classifier(object):
 
             labels2 = np.asarray(np.loadtxt('labels_' + str(self.window) + '_' + str(self.window_overlap) + '.txt'))
             labels.extend(labels2)
-            features2 = np.asarray(np.loadtxt('features_' + str(self.window) + '_' + str(self.window_overlap) + '_' + self.selector + '.txt'))
+            # features2 = np.asarray(np.loadtxt('features_' + str(self.window) + '_' + str(self.window_overlap) + '_' + self.selector + '.txt'))
+            features2 = np.asarray(np.loadtxt('features_' + str(self.window) + '_' + str(self.window_overlap) + '.txt'))
             features.extend(features2)
 
         features = np.asarray(features)
@@ -45,21 +46,6 @@ class Classifier(object):
         labels = np.asarray(labels)
 
         return labels, features
-
-    def random_forest_classifier(self, training_data, training_labels, testing_data):
-        rf = RandomForestClassifier(n_estimators=100, max_depth=5, oob_score=True)
-        rf = rf.fit(training_data, training_labels)
-        rf.class_weight()
-        predictions = rf.predict(testing_data)
-
-        return predictions
-
-    def svm_classifier(self, training_data, training_labels, testing_data):
-        clf = svm.SVC(gamma='scale')
-        clf = clf.fit(training_data, training_labels)
-        predictions = clf.predict(testing_data)
-
-        return predictions
 
     def knn_classifier(self, training_data, training_labels, testing_data):
         nbrs = NearestNeighbors(n_neighbors=5, algorithm='kd_tree')
@@ -99,12 +85,10 @@ class Classifier(object):
         self.window = window
         self.window_overlap = window_overlap
         self.selector = selector
-        rf = RandomForestClassifier(n_estimators=100, max_depth=5, oob_score=True)
-        clf = svm.SVC(gamma='auto')
 
-        predictsRF = []
-        predictsCLF = []
-        predictsNBRS = []
+        predicts_rf = []
+        predicts_clf = []
+        predicts_nbrs = []
         testings = []
         
         for sub in subjects:
@@ -113,52 +97,27 @@ class Classifier(object):
             testing_labels, testing_features = self.get_data(base_path, signal, sub, 'testing')
 
             testings.extend(testing_labels)
-
-            # print('labels true = ', testing_labels)
-            # dt = dt.fit(training_features, training_labels)
-            # predictions = dt.predict(testing_features)
-            # print('--------------------------------')
-            # print('DECISION TREE ', sub)
-            # self.print_results(predictions, testing_labels)
-
-            # predictions = random_forest_classifier(training_features, training_labels, testing_features)
-            # print(training_features.shape)
-            # print(training_features)
-            # print(training_labels)
-
-            # testing_features.reshape(-1, 1)
-            # training_features.reshape(-1, 1)
             
             rf = rf.fit(training_features, training_labels)
             predictions = rf.predict(testing_features)
-            predictsRF.extend(predictions)
-            # print('--------------------------------')
-            # print('RANDOM FOREST ', sub)
-            # self.print_results(predictions, testing_labels)
+            predicts_rf.extend(predictions)
 
-            # predictions = svm_classifier(training_features, training_labels, testing_features)
             clf = clf.fit(training_features, training_labels)
             predictions = clf.predict(testing_features)
-            predictsCLF.extend(predictions)
-            # print('--------------------------------')
-            # print('SVM ', sub)
-            # self.print_results(predictions, testing_labels)
-            # KNN -
-            # print('--------------------------------')
-            # print('KNN ', sub)
+            predicts_clf.extend(predictions)
+            
             predictions = self.knn_classifier(training_features, training_labels, testing_features)
-            predictsNBRS.extend(predictions)
-            # self.print_results(predictions, testing_labels)
+            predicts_nbrs.extend(predictions)
 
         shoot = Shooter()
-        new_results = shoot.choose(predictsRF, predictsNBRS, predictsCLF)
+        new_results = shoot.choose(predicts_rf, predicts_nbrs, predicts_clf)
 
         print('RF')
-        self.print_results(predictsRF, testings)
+        self.print_results(predicts_rf, testings)
         print('SVM')
-        self.print_results(predictsCLF, testings)
+        self.print_results(predicts_clf, testings)
         print('KNN')
-        self.print_results(predictsNBRS, testings)
+        self.print_results(predicts_nbrs, testings)
         print('Shooter')
         self.print_results(new_results, testings)
 
