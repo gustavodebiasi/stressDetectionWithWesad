@@ -9,7 +9,7 @@ class Service(object):
     RUN_READER = False
     RUN_EXTRACTOR = False
     RUN_SELECTOR = False
-    RUN_CLASSIFIER = False
+    RUN_CLASSIFIER = True
 
     BASE_PATH = '/Volumes/My Passport/TCC/WESAD/'
     BASE_SUBJECTS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17]
@@ -26,6 +26,8 @@ class Service(object):
     SELECTOR_SIGNALS = ['emg', 'resp', 'eda', 'ecg']
     SELECTOR_SELECTION_TYPE = ['pca', 'lda']
 
+    CLASSIFICATION_TIMES = 500
+
     def run(self):
         if (self.RUN_READER):
             read = Reader()
@@ -35,15 +37,30 @@ class Service(object):
             extract = Extractor()
             extract.execute(self.BASE_PATH, self.BASE_WINDOW, self.WINDOW_OVERLAP, self.BASE_SUBJECTS)
 
-        if (RUN_SELECTOR):
+        if (self.RUN_SELECTOR):
             select = Selector()
             for sig in self.SELECTOR_SIGNALS:
                 for st in self.SELECTOR_SELECTION_TYPE:
                     select.execute(self.BASE_PATH, sig, self.BASE_SUBJECTS, self.BASE_WINDOW, self.WINDOW_OVERLAP, st)
 
-        if (RUN_CLASSIFIER):
+        if (self.RUN_CLASSIFIER):
             classification = Classifier()
-            classification.execute(self.BASE_PATH, 'ecg', self.BASE_SUBJECTS, self.BASE_WINDOW, self.WINDOW_OVERLAP, 'pca')
+            for i in range(self.CLASSIFICATION_TIMES):
+                classification.execute(self.BASE_PATH, 'ecg', self.BASE_SUBJECTS, self.BASE_WINDOW, self.WINDOW_OVERLAP, 'pca', i)
+            classification.calc_med(self.BASE_PATH, 'ecg', self.BASE_SUBJECTS, self.CLASSIFICATION_TIMES)
+
+            for i in range(self.CLASSIFICATION_TIMES):
+                classification.execute(self.BASE_PATH, 'eda', self.BASE_SUBJECTS, self.BASE_WINDOW, self.WINDOW_OVERLAP, 'pca', i)
+            classification.calc_med(self.BASE_PATH, 'eda', self.BASE_SUBJECTS, self.CLASSIFICATION_TIMES)
+
+            for i in range(self.CLASSIFICATION_TIMES):
+                classification.execute(self.BASE_PATH, 'emg', self.BASE_SUBJECTS, self.BASE_WINDOW, self.WINDOW_OVERLAP, 'pca', i)
+            classification.calc_med(self.BASE_PATH, 'emg', self.BASE_SUBJECTS, self.CLASSIFICATION_TIMES)
+
+            for i in range(self.CLASSIFICATION_TIMES):
+                classification.execute(self.BASE_PATH, 'resp', self.BASE_SUBJECTS, self.BASE_WINDOW, self.WINDOW_OVERLAP, 'pca', i)
+            classification.calc_med(self.BASE_PATH, 'resp', self.BASE_SUBJECTS, self.CLASSIFICATION_TIMES)
+            
 
 from service import Service
 
