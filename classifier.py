@@ -32,7 +32,8 @@ class Classifier(object):
         
         for i in subjects:
             subject = 'S' + str(i)
-            path = base_path + subject + '/data/chest_' + signal + '/'
+            # path = base_path + subject + '/data/chest_' + signal + '/'
+            path = base_path + subject + '/data/'
             os.chdir(path)
 
             features2 = np.asarray(np.loadtxt('features_' + str(self.window) + '_' + str(self.window_overlap) + '_' + self.selector + '.txt'))
@@ -54,13 +55,13 @@ class Classifier(object):
         #     # print(labels)
         #     del labels[j]
         #     del features[j]
-        labels = np.asarray(labels)
-        features = np.asarray(features)
+        # labels = np.asarray(labels)
+        # features = np.asarray(features)
 
         return labels, features
 
     def knn_classifier(self, training_data, training_labels, testing_data):
-        nbrs = NearestNeighbors(n_neighbors=5, algorithm='kd_tree')
+        nbrs = NearestNeighbors(n_neighbors=8, algorithm='ball_tree')
         nbrs = nbrs.fit(training_data, training_labels)
         distances, indices = nbrs.kneighbors(testing_data)
         predictions = []
@@ -150,7 +151,7 @@ class Classifier(object):
             predictions = rf.predict(testing_features)
             predicts_rf.extend(predictions)
             predicts_rf2 = predictions
-            print('RF')
+            # print('RF')
             # self.print_results(predictions, testing_labels)
 
             clf = svm.SVC(gamma='scale', C=4)
@@ -158,34 +159,34 @@ class Classifier(object):
             predictions = clf.predict(testing_features)
             predicts_clf.extend(predictions)
             predicts_clf2 = predictions
-            print('SVM')
+            # print('SVM')
             # self.print_results(predictions, testing_labels)
         
             predictions = self.knn_classifier(training_features, training_labels, testing_features)
             predicts_nbrs.extend(predictions)
             predicts_nbrs2 = predictions
-            print('KNN')
+            # print('KNN')
             # self.print_results(predictions, testing_labels)
             
             shoot2 = Shooter()
             new_results = shoot2.choose(predicts_rf2, predicts_nbrs2, predicts_clf2)
-            print('Shooter')
+            # print('Shooter')
             # self.print_results(new_results, testing_labels)
-            self.save_results(base_path, sub, signal, predicts_rf2, predicts_clf2, predicts_nbrs2, new_results, testing_labels, times)
+            # self.save_results(base_path, sub, signal, predicts_rf2, predicts_clf2, predicts_nbrs2, new_results, testing_labels, times)
 
-            print('----------------------------------------------------------------')
+            # print('----------------------------------------------------------------')
 
         shoot = Shooter()
         new_results = shoot.choose(predicts_rf, predicts_nbrs, predicts_clf)
 
         print('RF')
-        # self.print_results(predicts_rf, testings)
+        self.print_results(predicts_rf, testings)
         print('SVM')
-        # self.print_results(predicts_clf, testings)
+        self.print_results(predicts_clf, testings)
         print('KNN')
-        # self.print_results(predicts_nbrs, testings)
+        self.print_results(predicts_nbrs, testings)
         print('Shooter')
-        # self.print_results(new_results, testings)
+        self.print_results(new_results, testings)
 
     def calc_med(self, base_path, signal, subjects, times):
         for sub in subjects:
@@ -197,7 +198,7 @@ class Classifier(object):
 
             meds = []
             k = 0
-            for k in range(6):
+            for k in range(8):
                 j = 0
                 med = 0
                 for j in range(len(all_data)):
@@ -207,6 +208,74 @@ class Classifier(object):
                 meds.extend([(med) / len(all_data)])
 
             np.savetxt(base_path + 'S' + str(sub) + '/data/chest_' + signal + '/all_results_' + str(times) + '.txt', meds, fmt="%f")
+
+    def calc_matrix_med(self, base_path, signal, subjects, times):
+        classifications = {
+            'svm': [0, 0, 0, 0],
+            'forest': [0, 0, 0, 0],
+            'knn': [0, 0, 0, 0],
+            'shoo': [0, 0, 0, 0],
+        }
+
+        for sub in subjects:
+            print('subject = ', sub)
+            i = 0
+            for i in range(times):
+                file = np.asarray(np.loadtxt(base_path + 'S' + str(sub) + '/data/chest_' + signal + '/matrix' + str(i) + '.txt'))
+                classifications['forest'][0] += file[0][0]
+                classifications['forest'][1] += file[0][1]
+                classifications['forest'][2] += file[0][2]
+                classifications['forest'][3] += file[0][3]
+                classifications['svm'][0] += file[1][0]
+                classifications['svm'][1] += file[1][1]
+                classifications['svm'][2] += file[1][2]
+                classifications['svm'][3] += file[1][3]
+                classifications['knn'][0] += file[2][0]
+                classifications['knn'][1] += file[2][1]
+                classifications['knn'][2] += file[2][2]
+                classifications['knn'][3] += file[2][3]
+                classifications['shoo'][0] += file[3][0]
+                classifications['shoo'][1] += file[3][1]
+                classifications['shoo'][2] += file[3][2]
+                classifications['shoo'][3] += file[3][3]
+        
+        classifications = self.calc_media_classifications(classifications, times)
+
+        new_array = []
+        new_array.append(classifications['forest'])
+        new_array.append(classifications['svm'])
+        new_array.append(classifications['knn'])
+        new_array.append(classifications['shoo'])
+
+        np.savetxt(base_path + '/resultados_totais_' + str(times) + '.txt', new_array, fmt="%f")
+
+    def calc_media_classifications(self, classifications, times):
+        return {
+            'forest': [
+                (classifications['forest'][0] / times),
+                (classifications['forest'][1] / times),
+                (classifications['forest'][2] / times),
+                (classifications['forest'][3] / times),
+            ],
+            'svm': [
+                (classifications['svm'][0] / times),
+                (classifications['svm'][1] / times),
+                (classifications['svm'][2] / times),
+                (classifications['svm'][3] / times),
+            ],
+            'knn': [
+                (classifications['knn'][0] / times),
+                (classifications['knn'][1] / times),
+                (classifications['knn'][2] / times),
+                (classifications['knn'][3] / times),
+            ],
+            'shoo': [
+                (classifications['shoo'][0] / times),
+                (classifications['shoo'][1] / times),
+                (classifications['shoo'][2] / times),
+                (classifications['shoo'][3] / times),
+            ],
+        }
 
 from classifier import Classifier
 
@@ -224,4 +293,5 @@ if __name__ == '__main__':
     for i in range(times):
         classification.execute(base_path, signal, subjects, window, window_overlap, selector, i)
 
-    classification.calc_med(base_path, signal, subjects, times)
+    # classification.calc_med(base_path, signal, subjects, times)
+    # classification.calc_matrix_med(base_path, signal, subjects, times)
