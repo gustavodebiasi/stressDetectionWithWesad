@@ -6,12 +6,12 @@ from Enums.Types import Types
 
 class Service(object):
 
-    RUN_READER = False
-    RUN_EXTRACTOR = False
-    RUN_SELECTOR = True
+    RUN_READER = True
+    RUN_EXTRACTOR = True
+    RUN_SELECTOR = False
     RUN_CLASSIFIER = False
 
-    BASE_PATH = '/Volumes/My Passport/TCC/WESAD/'
+    BASE_PATH = '/Volumes/My Passport/TCC/WESAD2/'
     BASE_SUBJECTS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17]
     BASE_WINDOW = 20
     WINDOW_OVERLAP = True
@@ -32,7 +32,7 @@ class Service(object):
     def run(self):
         if (self.RUN_READER):
             read = Reader()
-            read.execute(self.BASE_PATH, self.READER_TYPES, self.READER_SUBJECTS)
+            read.execute(self.BASE_PATH, self.READER_TYPES, self.BASE_SUBJECTS)
 
         if (self.RUN_EXTRACTOR):
             extract = Extractor()

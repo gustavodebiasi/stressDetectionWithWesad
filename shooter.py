@@ -1,3 +1,5 @@
+import numpy as np
+
 class Shooter(object):
     def choose(self, first_classifier, second_classifier, third_classifier):
         results = []
@@ -25,6 +27,6 @@ class Shooter(object):
             else:
                 results.append(1.0)
         
-        return results
+        return np.asarray(results)
 
 

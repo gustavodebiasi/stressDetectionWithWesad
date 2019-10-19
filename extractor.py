@@ -36,7 +36,6 @@ class Extractor(object):
         var_kurtosis = kurtosis(data)
         var_skew = self.select_data_from_string(skew(data))
         var_range = self.select_data_from_string(var_max - var_min)
-        # var_diff1 = self.select_data_from_string(np.diff)
 
         return [
             np.float32(var_mean),
@@ -178,9 +177,6 @@ class Extractor(object):
 
         return default_features
 
-    # def extract_temp(self, data):
-    #     return []
-
     def read_file(self, device, which):
         data = np.loadtxt(device + '_' + which + '_filtered.txt')
         if not (os.path.isdir(device + '_' + which)):
@@ -248,13 +244,6 @@ class Extractor(object):
             # self.process(labels700, 'chest', 'resp', self.registers700)
             # self.process(labels700, 'chest', 'emg', self.registers700)
             # self.process(labels700, 'chest', 'eda', self.registers700)
-            # labels4 = np.loadtxt('labels_4.txt')
-            # self.process(labels4, 'wrist', 'eda', self.registers4)
-
-            # labels64 = np.loadtxt('labels_64.txt')
-            # self.process(labels64, 'wrist', 'bvp', self.registers64)
-            # self.process(labels700, 'chest', 'temp', self.registers700)
-            # self.process(labels4, 'wrist', 'temp', self.registers4)
 
 from extractor import Extractor
 

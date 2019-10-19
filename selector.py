@@ -44,6 +44,8 @@ class Selector(object):
 
     def execute(self, base_path, signal, subjects, window, window_overlap, selection_type, with_all_signals):
         variances = []
+        first = 0
+        first_variance = -1
         for subject in subjects:
             all_subjects_except_test = subjects[:]
             all_subjects_except_test.remove(subject)
@@ -68,12 +70,18 @@ class Selector(object):
 
                 sum_95 = 0
                 objets_sum_95 = 0
-                for e in exp:
-                    if (sum_95 < 0.90 or objets_sum_95 <= 1):
-                        sum_95 += e
-                        objets_sum_95 += 1
+                if (first == 0):
+                    for e in exp:
+                        if ((sum_95 < 0.90 or objets_sum_95 <= 1)):
+                            sum_95 += e
+                            objets_sum_95 += 1
+                else:
+                    objets_sum_95 = first_variance
                 
                 objets_sum_95 = objets_sum_95 if objets_sum_95 >= 2 else 2 
+                if (first == 0):
+                    first = 1
+                    first_variance = objets_sum_95
 
                 new_features_pca = []
                 p = 0
@@ -91,9 +99,11 @@ class Selector(object):
                 lda = LinearDiscriminantAnalysis(n_components=None)
                 lda.fit(train_features, train_labels)
 
-                test_labels, test_features = self.get_labels_and_features(base_path, signal, [subject], window, window_overlap)
+                test_labels, test_features = self.get_labels_and_features(base_path, signal, [subject], window, window_overlap, with_all_signals)
 
                 new_features_lda = lda.transform(test_features)
+
+                print(new_features_lda)
 
                 # self.save_files(new_features_lda, selection_type, signal, with_all_signals, base_path, subject, window, window_overlap)
                 # 
@@ -134,10 +144,10 @@ if __name__ == '__main__':
     subjects = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17]
     base_path = '/Volumes/My Passport/TCC/WESAD/'
     signal = 'ecg'
-    selection_type = 'pca'
+    selection_type = 'lda'
     window = 20
     window_overlap = True
-    with_all_signals = True
+    with_all_signals = False
     select = Selector()
     variance = select.execute(base_path, signal, subjects, window, window_overlap, selection_type, with_all_signals)
     print(variance)
