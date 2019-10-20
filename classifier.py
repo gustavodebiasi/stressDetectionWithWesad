@@ -82,7 +82,7 @@ class Classifier(object):
         testings = []
 
         for sub in subjects:
-            print('sujeito = ', sub)
+            # print('sujeito = ', sub)
             training_labels, training_features = self.get_data(base_path, signal, sub, 'training')
             testing_labels, testing_features = self.get_data(base_path, signal, sub, 'testing')
 
@@ -123,15 +123,14 @@ from evaluator import Evaluator
 
 if __name__ == '__main__':
     subjects = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17]
-    # all_subjects = [2, 3]
     signal = 'ecg'
     base_path = '/Volumes/My Passport/TCC/WESAD2/'
     window = 20
     window_overlap = True
     selector = 'pca'
     use_classifiers = ['svm', 'forest', 'knn', 'shooter']
-    with_all_signals = True
-    times = 1
+    with_all_signals = False
+    times = 2
     classification = Classifier()
     evaluate = Evaluator()
     i = 0
@@ -141,6 +140,7 @@ if __name__ == '__main__':
     predicts_shooter = []
     testings = []
     for i in range(times):
+        print('times = ', i)
         predicts_rf.insert(i, [])
         predicts_clf.insert(i, [])
         predicts_nbrs.insert(i, [])
@@ -148,4 +148,6 @@ if __name__ == '__main__':
         testings.insert(i, [])
         predicts_rf[i], predicts_clf[i], predicts_nbrs[i], predicts_shooter[i], testings[i] = classification.execute(base_path, signal, subjects, window, window_overlap, selector, use_classifiers, with_all_signals, i)
 
-    evaluate.report(subjects, times, testings, predicts_rf, predicts_clf, predicts_nbrs, predicts_shooter)
+    print('\n\n\n --------------------------------')
+
+    evaluate.report(subjects, times, testings, predicts_rf, predicts_clf, predicts_nbrs, predicts_shooter, '/Volumes/My Passport/TCC/Resultados/teste.txt')

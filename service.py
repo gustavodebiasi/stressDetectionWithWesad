@@ -3,13 +3,14 @@ from extractor import Extractor
 from selector import Selector
 from classifier import Classifier
 from Enums.Types import Types
+from evaluator import Evaluator
 
 class Service(object):
 
     RUN_READER = False
     RUN_EXTRACTOR = False
-    RUN_SELECTOR = True
-    RUN_CLASSIFIER = False
+    RUN_SELECTOR = False
+    RUN_CLASSIFIER = True
 
     BASE_PATH = '/Volumes/My Passport/TCC/WESAD2/'
     BASE_SUBJECTS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17]
@@ -25,9 +26,9 @@ class Service(object):
     # Selector Variables
     SELECTOR_SIGNALS = ['emg', 'resp', 'eda', 'ecg']
     SELECTOR_SELECTION_TYPE = ['pca', 'lda']
-    SELECTOR_ALL_SIGNS = True
+    SELECTOR_ALL_SIGNS = False
 
-    CLASSIFICATION_TIMES = 100
+    CLASSIFICATION_TIMES = 2
 
     def run(self):
         if (self.RUN_READER):
@@ -53,23 +54,43 @@ class Service(object):
             
 
         if (self.RUN_CLASSIFIER):
-            classification = Classifier()
-            # for i in range(self.CLASSIFICATION_TIMES):
-                # classification.execute(self.BASE_PATH, 'ecg', self.BASE_SUBJECTS, self.BASE_WINDOW, self.WINDOW_OVERLAP, 'pca', i)
-            classification.calc_med(self.BASE_PATH, 'ecg', self.BASE_SUBJECTS, self.CLASSIFICATION_TIMES)
+            self.individual('ecg', 'pca', 1)
+            self.individual('ecg', 'lda', 2)
+            self.individual('ecg', '', 3)
+            self.individual('eda', 'pca', 1)
+            self.individual('eda', 'lda', 2)
+            self.individual('eda', '', 3)
+            self.individual('emg', 'pca', 1)
+            self.individual('emg', 'lda', 2)
+            self.individual('emg', '', 3)
+            self.individual('resp', 'pca', 1)
+            self.individual('resp', 'lda', 2)
+            self.individual('resp', '', 3)
 
-            # for i in range(self.CLASSIFICATION_TIMES):
-                # classification.execute(self.BASE_PATH, 'eda', self.BASE_SUBJECTS, self.BASE_WINDOW, self.WINDOW_OVERLAP, 'pca', i)
-            classification.calc_med(self.BASE_PATH, 'eda', self.BASE_SUBJECTS, self.CLASSIFICATION_TIMES)
 
-            # for i in range(self.CLASSIFICATION_TIMES):
-            #     classification.execute(self.BASE_PATH, 'emg', self.BASE_SUBJECTS, self.BASE_WINDOW, self.WINDOW_OVERLAP, 'pca', i)
-            # classification.calc_med(self.BASE_PATH, 'emg', self.BASE_SUBJECTS, self.CLASSIFICATION_TIMES)
-
-            # for i in range(self.CLASSIFICATION_TIMES):
-            #     classification.execute(self.BASE_PATH, 'resp', self.BASE_SUBJECTS, self.BASE_WINDOW, self.WINDOW_OVERLAP, 'pca', i)
-            # classification.calc_med(self.BASE_PATH, 'resp', self.BASE_SUBJECTS, self.CLASSIFICATION_TIMES)
             
+    def individual(self, signal, selection, number):
+        print('Begining ' + str(number) + ' - ' + signal + ' ' + selection + ' ')
+        classification = Classifier()
+        evaluate = Evaluator()
+        i = 0
+        predicts_rf = []
+        predicts_clf = []
+        predicts_nbrs = []
+        predicts_shooter = []
+        testings = []
+        for i in range(self.CLASSIFICATION_TIMES):
+            print('times = ', i)
+            predicts_rf.insert(i, [])
+            predicts_clf.insert(i, [])
+            predicts_nbrs.insert(i, [])
+            predicts_shooter.insert(i, [])
+            testings.insert(i, [])
+            predicts_rf[i], predicts_clf[i], predicts_nbrs[i], predicts_shooter[i], testings[i] = classification.execute(self.BASE_PATH, signal, self.BASE_SUBJECTS, self.BASE_WINDOW, self.WINDOW_OVERLAP, selection, ['svm', 'forest', 'knn', 'shooter'], False, i)
+
+        print('\n\n\n --------------------------------')
+
+        evaluate.report(self.BASE_SUBJECTS, self.CLASSIFICATION_TIMES, testings, predicts_rf, predicts_clf, predicts_nbrs, predicts_shooter, '/Volumes/My Passport/TCC/Resultados/' + str(number) + '_' + signal + '.txt')
 
 from service import Service
 
