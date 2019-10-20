@@ -52,61 +52,50 @@ class Selector(object):
             train_labels, train_features = self.get_labels_and_features(base_path, signal, all_subjects_except_test, window, window_overlap, with_all_signals)
 
             if (selection_type == 'pca'):
-                sc = StandardScaler()
-                train_features = sc.fit_transform(train_features)
-
-                pca_select = PCA()
-                pca_select.fit(train_features)
-
-                test_labels, test_features = self.get_labels_and_features(base_path, signal, [subject], window, window_overlap, with_all_signals)
-
-                test_features = sc.transform(test_features)
-
-                principal_components = pca_select.transform(test_features)
-
-                principal_df = pd.DataFrame(data = principal_components)
-                exp = pca_select.explained_variance_ratio_
-                variances.append(exp)
-
-                sum_95 = 0
-                objets_sum_95 = 0
-                if (first == 0):
-                    for e in exp:
-                        if ((sum_95 < 0.90 or objets_sum_95 <= 1)):
-                            sum_95 += e
-                            objets_sum_95 += 1
-                else:
-                    objets_sum_95 = first_variance
-                
-                objets_sum_95 = objets_sum_95 if objets_sum_95 >= 2 else 2 
-                if (first == 0):
-                    first = 1
-                    first_variance = objets_sum_95
-
-                new_features_pca = []
-                p = 0
-                for p in range(len(principal_df)):
-                    array_new_features = []
-                    k = 0
-                    for k in range(objets_sum_95):
-                        array_new_features.extend([principal_df[k][p]])
-
-                    new_features_pca.append(array_new_features)
-
-                self.save_files(new_features_pca, test_labels, selection_type, signal, with_all_signals, base_path, subject, window, window_overlap)
+                reduction = PCA()
 
             if (selection_type == 'lda'):
-                lda = LinearDiscriminantAnalysis(n_components=None)
-                lda.fit(train_features, train_labels)
+                reduction = LinearDiscriminantAnalysis(n_components=None)
 
-                test_labels, test_features = self.get_labels_and_features(base_path, signal, [subject], window, window_overlap, with_all_signals)
+            sc = StandardScaler()
+            train_features = sc.fit_transform(train_features)
 
-                new_features_lda = lda.transform(test_features)
+            reduction.fit(train_features, train_labels)
 
-                print(new_features_lda)
+            test_labels, test_features = self.get_labels_and_features(base_path, signal, [subject], window, window_overlap, with_all_signals)
 
-                # self.save_files(new_features_lda, selection_type, signal, with_all_signals, base_path, subject, window, window_overlap)
-                # 
+            test_features = sc.transform(test_features)
+
+            principal_components = reduction.transform(test_features)
+
+            principal_df = pd.DataFrame(data = principal_components)
+            exp = reduction.explained_variance_ratio_
+            variances.append(exp)
+
+            sum_exp = 0
+            objects_sum = 0
+            if (first == 0):
+                for e in exp:
+                    if (sum_exp < 0.90 or objects_sum <= 1):
+                        sum_exp += e
+                        objects_sum += 1
+                
+                first_variance = objects_sum
+                first = 1
+            else:
+                objects_sum = first_variance
+
+            new_features = []
+            p = 0
+            for p in range(len(principal_df)):
+                array_new_features = []
+                k = 0
+                for k in range(objects_sum):
+                    array_new_features.extend([principal_df[k][p]])
+
+                new_features.append(array_new_features)
+
+            self.save_files(new_features, test_labels, selection_type, signal, with_all_signals, base_path, subject, window, window_overlap)
 
         return self.calc_variances_std(variances)
 
@@ -142,7 +131,7 @@ from selector import Selector
 
 if __name__ == '__main__':
     subjects = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17]
-    base_path = '/Volumes/My Passport/TCC/WESAD/'
+    base_path = '/Volumes/My Passport/TCC/WESAD2/'
     signal = 'ecg'
     selection_type = 'lda'
     window = 20

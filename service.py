@@ -6,9 +6,9 @@ from Enums.Types import Types
 
 class Service(object):
 
-    RUN_READER = True
-    RUN_EXTRACTOR = True
-    RUN_SELECTOR = False
+    RUN_READER = False
+    RUN_EXTRACTOR = False
+    RUN_SELECTOR = True
     RUN_CLASSIFIER = False
 
     BASE_PATH = '/Volumes/My Passport/TCC/WESAD2/'
@@ -24,8 +24,8 @@ class Service(object):
 
     # Selector Variables
     SELECTOR_SIGNALS = ['emg', 'resp', 'eda', 'ecg']
-    SELECTOR_SELECTION_TYPE = ['pca']
-    SELECTOR_ALL_SIGNS = False
+    SELECTOR_SELECTION_TYPE = ['pca', 'lda']
+    SELECTOR_ALL_SIGNS = True
 
     CLASSIFICATION_TIMES = 100
 
@@ -39,14 +39,17 @@ class Service(object):
             extract.execute(self.BASE_PATH, self.BASE_WINDOW, self.WINDOW_OVERLAP, self.BASE_SUBJECTS)
 
         if (self.RUN_SELECTOR):
-            selection_results_pca = {}
+            selection_results = {}
             select = Selector()
-            for sig in self.SELECTOR_SIGNALS:
-                selection_results_pca[sig] = []
-                for st in self.SELECTOR_SELECTION_TYPE:
-                    selection_results_pca[sig] = select.execute(self.BASE_PATH, sig, self.BASE_SUBJECTS, self.BASE_WINDOW, self.WINDOW_OVERLAP, st, self.SELECTOR_ALL_SIGNS)
-            print('RATIO, STD')
-            print(selection_results_pca)
+            for st in self.SELECTOR_SELECTION_TYPE:
+                for sig in self.SELECTOR_SIGNALS:
+                    selection_results[sig] = []
+                    selection_results[sig] = select.execute(self.BASE_PATH, sig, self.BASE_SUBJECTS, self.BASE_WINDOW, self.WINDOW_OVERLAP, st, self.SELECTOR_ALL_SIGNS)
+                    if (self.SELECTOR_ALL_SIGNS):
+                        break
+                print('Results = ', st)
+                print('RATIO, STD')
+                print(selection_results)
             
 
         if (self.RUN_CLASSIFIER):

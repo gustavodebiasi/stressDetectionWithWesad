@@ -38,19 +38,10 @@ class Classifier(object):
             labels.extend(labels2)
 
         i = 0
-        all_delete = []
         for i in range(len(labels)):
             if (int(labels[i]) == 3):
-                all_delete.append(i)
-                # labels[i] = 1
+                labels[i] = 1
 
-        all_delete.sort(reverse = True)
-
-        for j in all_delete:
-            # print(j)
-            # print(labels)
-            del labels[j]
-            del features[j]
         labels = np.asarray(labels)
         features = np.asarray(features)
 
@@ -95,6 +86,10 @@ class Classifier(object):
             training_labels, training_features = self.get_data(base_path, signal, sub, 'training')
             testing_labels, testing_features = self.get_data(base_path, signal, sub, 'testing')
 
+            if (np.isscalar(training_features[0])):
+                training_features = training_features.reshape(-1,1)
+                testing_features = testing_features.reshape(-1,1)
+
             testings.insert(sub, testing_labels)
 
             if 'forest' in use_classifiers:
@@ -130,28 +125,27 @@ if __name__ == '__main__':
     subjects = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17]
     # all_subjects = [2, 3]
     signal = 'ecg'
-    base_path = '/Volumes/My Passport/TCC/WESAD/'
+    base_path = '/Volumes/My Passport/TCC/WESAD2/'
     window = 20
     window_overlap = True
     selector = 'pca'
     use_classifiers = ['svm', 'forest', 'knn', 'shooter']
-    with_all_signals = False
+    with_all_signals = True
     times = 1
     classification = Classifier()
     evaluate = Evaluator()
     i = 0
+    predicts_rf = []
+    predicts_clf = []
+    predicts_nbrs = []
+    predicts_shooter = []
+    testings = []
     for i in range(times):
-        predicts_rf, predicts_clf, predicts_nbrs, predicts_shooter, testings = classification.execute(base_path, signal, subjects, window, window_overlap, selector, use_classifiers, with_all_signals, i)
+        predicts_rf.insert(i, [])
+        predicts_clf.insert(i, [])
+        predicts_nbrs.insert(i, [])
+        predicts_shooter.insert(i, [])
+        testings.insert(i, [])
+        predicts_rf[i], predicts_clf[i], predicts_nbrs[i], predicts_shooter[i], testings[i] = classification.execute(base_path, signal, subjects, window, window_overlap, selector, use_classifiers, with_all_signals, i)
 
-        print('RF ------------------------')
-        evaluate.report(testings, predicts_rf)
-        # print('RANDOM')
-        # print(predicts_rf[0])
-        # print('SVM')
-        # print(predicts_clf[0])
-        # print('KNN')
-        # print(predicts_nbrs[0])
-        # print('SHOOT')
-        # print(predicts_shooter[0])
-        # print('TESTINGS')
-        # print(testings[0])
+    evaluate.report(subjects, times, testings, predicts_rf, predicts_clf, predicts_nbrs, predicts_shooter)
