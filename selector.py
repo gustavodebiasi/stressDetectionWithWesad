@@ -51,6 +51,12 @@ class Selector(object):
             all_subjects_except_test.remove(subject)
             train_labels, train_features = self.get_labels_and_features(base_path, signal, all_subjects_except_test, window, window_overlap, with_all_signals)
 
+            test_labels, test_features = self.get_labels_and_features(base_path, signal, [subject], window, window_overlap, with_all_signals)
+
+            if (with_all_signals):
+                self.save_files(test_features, test_labels, selection_type, signal, with_all_signals, base_path, subject, window, window_overlap)
+                continue
+
             if (selection_type == 'pca'):
                 reduction = PCA()
 
@@ -61,8 +67,6 @@ class Selector(object):
             train_features = sc.fit_transform(train_features)
 
             reduction.fit(train_features, train_labels)
-
-            test_labels, test_features = self.get_labels_and_features(base_path, signal, [subject], window, window_overlap, with_all_signals)
 
             test_features = sc.transform(test_features)
 
@@ -97,11 +101,18 @@ class Selector(object):
 
             self.save_files(new_features, test_labels, selection_type, signal, with_all_signals, base_path, subject, window, window_overlap)
 
+        if (with_all_signals):
+            return []
+
         return self.calc_variances_std(variances)
 
     def save_files(self, features, labels, selection_type, signal, with_all_signals, base_path, subject, window, window_overlap):
         if (with_all_signals):
-            np.savetxt(base_path + 'S' + str(subject) + '/data/features_' + str(window) + '_' + str(window_overlap) + '_' + selection_type + '.txt', features, fmt="%f")
+            select_text = ''
+            if (selection_type != ''):
+                select_text = '_' + selection_type
+                
+            np.savetxt(base_path + 'S' + str(subject) + '/data/features_' + str(window) + '_' + str(window_overlap) + select_text + '.txt', features, fmt="%f")
             np.savetxt(base_path + 'S' + str(subject) + '/data/labels_' + str(window) + '_' + str(window_overlap) + '.txt', np.asarray(labels), fmt="%f")
         else:
             np.savetxt(base_path + 'S' + str(subject) + '/data/chest_' + signal + '/features_' + str(window) + '_' + str(window_overlap) + '_' + selection_type + '.txt', features, fmt="%f")

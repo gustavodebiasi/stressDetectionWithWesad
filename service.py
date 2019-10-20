@@ -25,10 +25,10 @@ class Service(object):
 
     # Selector Variables
     SELECTOR_SIGNALS = ['emg', 'resp', 'eda', 'ecg']
-    SELECTOR_SELECTION_TYPE = ['pca', 'lda']
-    SELECTOR_ALL_SIGNS = False
+    SELECTOR_SELECTION_TYPE = ['']
+    SELECTOR_ALL_SIGNS = True
 
-    CLASSIFICATION_TIMES = 2
+    CLASSIFICATION_TIMES = 100
 
     def run(self):
         if (self.RUN_READER):
@@ -66,7 +66,9 @@ class Service(object):
             self.individual('resp', 'pca', 1)
             self.individual('resp', 'lda', 2)
             self.individual('resp', '', 3)
-
+            self.todos('pca', 4)
+            self.todos('lda', 5)
+            self.todos('', 6)
 
             
     def individual(self, signal, selection, number):
@@ -90,7 +92,30 @@ class Service(object):
 
         print('\n\n\n --------------------------------')
 
-        evaluate.report(self.BASE_SUBJECTS, self.CLASSIFICATION_TIMES, testings, predicts_rf, predicts_clf, predicts_nbrs, predicts_shooter, '/Volumes/My Passport/TCC/Resultados/' + str(number) + '_' + signal + '.txt')
+        evaluate.report(self.BASE_SUBJECTS, self.CLASSIFICATION_TIMES, testings, predicts_rf, predicts_clf, predicts_nbrs, predicts_shooter, '/Volumes/My Passport/TCC/Resultados/' + signal + '_' + str(number) + '.csv')
+
+    def todos(self, selection, number):
+        print('Begining ' + str(number) + ' - TODOS ' + selection + ' ')
+        classification = Classifier()
+        evaluate = Evaluator()
+        i = 0
+        predicts_rf = []
+        predicts_clf = []
+        predicts_nbrs = []
+        predicts_shooter = []
+        testings = []
+        for i in range(self.CLASSIFICATION_TIMES):
+            print('times = ', i)
+            predicts_rf.insert(i, [])
+            predicts_clf.insert(i, [])
+            predicts_nbrs.insert(i, [])
+            predicts_shooter.insert(i, [])
+            testings.insert(i, [])
+            predicts_rf[i], predicts_clf[i], predicts_nbrs[i], predicts_shooter[i], testings[i] = classification.execute(self.BASE_PATH, 'ecg', self.BASE_SUBJECTS, self.BASE_WINDOW, self.WINDOW_OVERLAP, selection, ['svm', 'forest', 'knn', 'shooter'], True, i)
+
+        print('\n\n\n --------------------------------')
+
+        evaluate.report(self.BASE_SUBJECTS, self.CLASSIFICATION_TIMES, testings, predicts_rf, predicts_clf, predicts_nbrs, predicts_shooter, '/Volumes/My Passport/TCC/Resultados/TODOS_' + str(number) + '.csv')
 
 from service import Service
 
