@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 from sklearn import svm
-from sklearn.neighbors import NearestNeighbors
+from sklearn.neighbors import KNeighborsClassifier
 from shooter import Shooter
 
 class Classifier(object):
@@ -47,27 +47,6 @@ class Classifier(object):
 
         return labels, features
 
-    def knn_classifier(self, training_data, training_labels, testing_data):
-        # n_neighbors = 5
-        # fifty_neighbors = int(n_neighbors/2)
-        # print(fifty_neighbors)
-        nbrs = NearestNeighbors(n_neighbors=10, algorithm='ball_tree')
-        nbrs = nbrs.fit(training_data, training_labels)
-        distances, indices = nbrs.kneighbors(testing_data)
-        predictions = []
-        for indice in indices:
-            i = 0
-            count_stress = 0
-            for i in range(len(indice)):
-                if (training_labels[indice[i]] == 2.0):
-                    count_stress += 1
-            if (count_stress >= 6):
-                predictions.append(2.)
-            else:
-                predictions.append(1.)
-
-        return np.asarray(predictions)
-
     def execute(self, base_path, signal, subjects, window, window_overlap, selector, use_classifiers, with_all_signals, times):
         self.subjects = subjects
         self.window = window
@@ -82,7 +61,7 @@ class Classifier(object):
         testings = []
 
         for sub in subjects:
-            # print('sujeito = ', sub)
+            print('sujeito = ', sub)
             training_labels, training_features = self.get_data(base_path, signal, sub, 'training')
             testing_labels, testing_features = self.get_data(base_path, signal, sub, 'testing')
 
@@ -107,7 +86,9 @@ class Classifier(object):
                 predicts_clf_subject = predictions
         
             if 'knn' in use_classifiers:
-                predictions = self.knn_classifier(training_features, training_labels, testing_features)
+                knn = KNeighborsClassifier(n_neighbors=11, weights='distance', algorithm='auto', metric='euclidean')
+                knn = knn.fit(training_features, training_labels)
+                predictions = knn.predict(testing_features)
                 predicts_nbrs.insert(sub, predictions)
                 predicts_nbrs_subject = predictions
             

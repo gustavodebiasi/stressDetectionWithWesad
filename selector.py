@@ -24,15 +24,20 @@ class Selector(object):
                 features_ecg = np.asarray(np.loadtxt(path + 'ecg/' + 'features_' + str(window) + '_' + str(window_overlap) + '.txt'))
                 features_eda = np.asarray(np.loadtxt(path + 'eda/' + 'features_' + str(window) + '_' + str(window_overlap) + '.txt'))
                 features_resp = np.asarray(np.loadtxt(path + 'resp/' + 'features_' + str(window) + '_' + str(window_overlap) + '.txt'))
-                features_emg = np.asarray(np.loadtxt(path + 'emg/' + 'features_' + str(window) + '_' + str(window_overlap) + '.txt'))
+                # features_emg = np.asarray(np.loadtxt(path + 'emg/' + 'features_' + str(window) + '_' + str(window_overlap) + '.txt'))
 
                 all_features = []
-                for j in range(len(features_ecg)):
+                size = len(features_ecg)
+                if (len(features_eda) < size):
+                    size = len(features_eda)
+                if (len(features_resp) < size):
+                    size = len(features_resp)
+                for j in range(size):
                     all_features.insert(j, [])
                     all_features[j].extend(features_ecg[j])
                     all_features[j].extend(features_eda[j])
                     all_features[j].extend(features_resp[j])
-                    all_features[j].extend(features_emg[j])
+                    # all_features[j].extend(features_emg[j])
                 features2.extend(all_features)
             else:
                 features2 = np.asarray(np.loadtxt(path + signal + '/' + 'features_' + str(window) + '_' + str(window_overlap) + '.txt'))
@@ -66,52 +71,59 @@ class Selector(object):
             sc = StandardScaler()
             train_features = sc.fit_transform(train_features)
 
-            reduction.fit(train_features, train_labels)
+            if (selection_type == 'lda' or selection_type == 'pca'):
+                reduction.fit(train_features, train_labels)
 
             test_features = sc.transform(test_features)
 
-            principal_components = reduction.transform(test_features)
+            if (selection_type == 'lda' or selection_type == 'pca'):
+                principal_components = reduction.transform(test_features)
 
-            principal_df = pd.DataFrame(data = principal_components)
-            exp = reduction.explained_variance_ratio_
-            variances.append(exp)
+                principal_df = pd.DataFrame(data = principal_components)
+                exp = reduction.explained_variance_ratio_
+                variances.append(exp)
 
-            sum_exp = 0
-            objects_sum = 0
-            if (first == 0):
-                for e in exp:
-                    if (sum_exp < 0.90 or objects_sum <= 1):
-                        sum_exp += e
-                        objects_sum += 1
-                
-                first_variance = objects_sum
-                first = 1
+                sum_exp = 0
+                objects_sum = 0
+                if (first == 0):
+                    for e in exp:
+                        if (sum_exp < 0.95 or objects_sum <= 1):
+                            sum_exp += e
+                            objects_sum += 1
+                    
+                    first_variance = objects_sum
+                    first = 1
+                else:
+                    objects_sum = first_variance
+
+                new_features = []
+                p = 0
+                for p in range(len(principal_df)):
+                    array_new_features = []
+                    k = 0
+                    for k in range(objects_sum):
+                        array_new_features.extend([principal_df[k][p]])
+
+                    new_features.append(array_new_features)
             else:
-                objects_sum = first_variance
-
-            new_features = []
-            p = 0
-            for p in range(len(principal_df)):
-                array_new_features = []
-                k = 0
-                for k in range(objects_sum):
-                    array_new_features.extend([principal_df[k][p]])
-
-                new_features.append(array_new_features)
+                new_features = test_features
 
             self.save_files(new_features, test_labels, selection_type, signal, with_all_signals, base_path, subject, window, window_overlap)
 
         if (with_all_signals):
             return []
 
-        return self.calc_variances_std(variances)
+        if (selection_type == 'lda' or selection_type == 'pca'):
+            return self.calc_variances_std(variances)
+        
+        return ['Sem variações']
 
     def save_files(self, features, labels, selection_type, signal, with_all_signals, base_path, subject, window, window_overlap):
         if (with_all_signals):
             select_text = ''
             if (selection_type != ''):
                 select_text = '_' + selection_type
-                
+
             np.savetxt(base_path + 'S' + str(subject) + '/data/features_' + str(window) + '_' + str(window_overlap) + select_text + '.txt', features, fmt="%f")
             np.savetxt(base_path + 'S' + str(subject) + '/data/labels_' + str(window) + '_' + str(window_overlap) + '.txt', np.asarray(labels), fmt="%f")
         else:
