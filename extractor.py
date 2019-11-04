@@ -19,12 +19,14 @@ class Extractor(object):
     path = ''
     window_overlap = False
     window = 0
+    overlap = 0
 
     def calc_registers(self):
         self.registers700 = 700 * self.window
         self.registers64 = 64 * self.window
         self.registers32 = 32 * self.window
         self.registers4 = 4 * self.window 
+        self.overlap = (self.window - 30) * 700
 
     def extract_default_features(self, data):
         var_mean = np.mean(data)
@@ -78,7 +80,6 @@ class Extractor(object):
             i += 1
 
         return data_sum
-        # return (data_sum / len(data))
 
     def extract_zero_crossing(self, data):
         data_sum = 0
@@ -91,7 +92,6 @@ class Extractor(object):
             i += 1
 
         return data_sum
-        # return (data_sum / len(data))
 
     def extract_emg(self, data_emg):
         default_features = self.extract_default_features(data_emg)
@@ -118,15 +118,14 @@ class Extractor(object):
             return 0.
 
     def extract_ecg(self, data_ecg):
-        data = nk.ecg_process(ecg=data_ecg, rsp=None, sampling_rate=700)
-        # data = nk.ecg_process(ecg=data_ecg, rsp=None, sampling_rate=700, filter_type='butter', filter_band='bandpass', filter_frequency=[3,45], segmenter='hamilton', quality_model='default', hrv_features=['time', 'frequency', 'nonlinear'])
+        try:
+            data = nk.ecg_process(ecg=data_ecg, rsp=None, sampling_rate=700)
+        except:
+            return []
 
         default_features = self.extract_default_features(data_ecg)
         default_features.extend([
             self.select_data_from_array(data['ECG']['HRV'],'CVSD'),
-            # self.select_data_from_array(data['ECG']['HRV'],'Correlation_Dimension'),
-            # self.select_data_from_array(data['ECG']['HRV'],'DFA_1'),
-            # self.select_data_from_array(data['ECG']['HRV'],'DFA_2'),
             self.select_data_from_array(data['ECG']['HRV'],'HF'),
             self.select_data_from_array(data['ECG']['HRV'],'HF/P'),
             self.select_data_from_array(data['ECG']['HRV'],'HFn'),
@@ -137,9 +136,7 @@ class Extractor(object):
             self.select_data_from_array(data['ECG']['HRV'],'RMSSD'),
             self.select_data_from_array(data['ECG']['HRV'],'Total_Power'),
             self.select_data_from_array(data['ECG']['HRV'],'Triang'),
-            # self.select_data_from_array(data['ECG']['HRV'],'ULF'),
             self.select_data_from_array(data['ECG']['HRV'],'VHF'),
-            # self.select_data_from_array(data['ECG']['HRV'],'VLF'),
             self.select_data_from_array(data['ECG']['HRV'],'cvNN'),
             self.select_data_from_array(data['ECG']['HRV'],'madNN'),
             self.select_data_from_array(data['ECG']['HRV'],'mcvNN'),
@@ -167,7 +164,10 @@ class Extractor(object):
         return default_features
 
     def extract_eda(self, data_eda, label):
-        data = nk.eda_process(data_eda, 700)
+        try:
+            data = nk.eda_process(data_eda, 700)
+        except:
+            return []
 
         default_features = self.extract_default_features(data_eda)
         default_features.extend([
@@ -214,7 +214,7 @@ class Extractor(object):
                 data_window = []
                 
                 if (i != data_size and self.window_overlap and len(data_window) % registers == 0 and label_anterior == labels[i]):
-                    i = (i - int(registers / 2)) + 1
+                    i = i - self.overlap
                 
             if (i == data_size):
                 all_feat = np.asarray(all_features)
@@ -241,18 +241,17 @@ class Extractor(object):
             labels700 = np.loadtxt('chest_labels_filtered.txt')
 
             self.process(labels700, 'chest', 'ecg', self.registers700)
-            # self.process(labels700, 'chest', 'resp', self.registers700)
-            # self.process(labels700, 'chest', 'emg', self.registers700)
-            # self.process(labels700, 'chest', 'eda', self.registers700)
+            self.process(labels700, 'chest', 'emg', self.registers700)
+            self.process(labels700, 'chest', 'eda', self.registers700)
+            self.process(labels700, 'chest', 'resp', self.registers700)
 
 from extractor import Extractor
 
 if __name__ == '__main__':
-    window = 20
+    window = 30
     window_overlap = True
     path = '/Volumes/My Passport/TCC/WESAD/'
-    subjects = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-    # subjects = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17]
+    subjects = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17]
     extract = Extractor()
     extract.execute(path, window, window_overlap, subjects)
     
