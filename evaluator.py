@@ -52,16 +52,21 @@ class Evaluator(object):
         j = 0
         sensibility = []
         specificity = []
+        accuracy = []
         matrix = []
         for j in range(len(subjects)):
             matrix.insert(j, [])
             sensibility.insert(j, [])
             specificity.insert(j, [])
+            accuracy.insert(j, [])
             for i in range(times):
                 matrix[j].insert(i, self.matrix_confusion(predictions[i][j], testings[i][j]))
                 sensibility[j].insert(i, self.calc_sensibility(matrix[j][i]))
                 specificity[j].insert(i, self.calc_specificity(matrix[j][i]))
+                accuracy[j].insert(i, self.calc_accuracy(testings[i][j], predictions[i][j]))
 
+        accuracy_resume = []
+        accuracy_std = []
         sensibility_resume = []
         sensibility_std = []
         specificity_resume = []
@@ -71,16 +76,18 @@ class Evaluator(object):
             sensibility_std.insert(j, np.std(sensibility[j]))
             specificity_resume.insert(j, np.mean(specificity[j]))
             specificity_std.insert(j, np.std(specificity[j]))
+            accuracy_resume.insert(j, np.mean(accuracy[j]))
+            accuracy_std.insert(j, np.std(accuracy[j]))
 
         if (self.path_save_file != ''):
             self.text_file.write('RESUME PER SUBJECT\n')
-            self.text_file.write('sub ;  sensibility   ;   sensibility_std  ;   specificity  ; specificity_std\n')
+            self.text_file.write('sub ;  sensibility   ;   sensibility_std  ;   specificity  ; specificity_std ; accuracy ; accuracy_std\n')
         else:
             print('RESUME PER SUBJECT')
-            print('sub ;  sensibility   ;   sensibility_std  ;   specificity  ; specificity_std')
+            print('sub ;  sensibility   ;   sensibility_std  ;   specificity  ; specificity_std ; accuracy ; accuracy_std')
 
         for i in range(len(subjects)):
-            texto = format(i, '02') + '  ; ' + self.print_percent(sensibility_resume[i]) + '  ; ' + self.print_percent(sensibility_std[i]) + ' ; ' + self.print_percent(specificity_resume[i]) + ' ; ' + self.print_percent(specificity_std[i])
+            texto = format(i, '02') + '  ; ' + self.print_percent(sensibility_resume[i]) + '  ; ' + self.print_percent(sensibility_std[i]) + ' ; ' + self.print_percent(specificity_resume[i]) + ' ; ' + self.print_percent(specificity_std[i]) + ' ; ' + self.print_percent(accuracy_resume[i]) + ' ; ' + self.print_percent(accuracy_std)
             if (self.path_save_file != ''):
                 self.text_file.write(texto + '\n')
             else:
@@ -100,16 +107,21 @@ class Evaluator(object):
         if (self.path_save_file != ''):
             self.text_file.write('-----------\n')
             self.text_file.write('TOTAL RESUME\n')
+            self.text_file.write('accuracy ; ' + str(np.mean(accuracy_resume)) + '\n')
             self.text_file.write('sensibility ; ' + str(np.mean(sensibility_resume)) + '\n')
             self.text_file.write('specificity ; ' + str(np.mean(specificity_resume)) + '\n')
         else:
             print('-----------')
             print('TOTAL RESUME')
+            print('accuracy ; ', np.mean(accuracy_resume))
             print('sensibility ; ', np.mean(sensibility_resume))
             print('specificity ; ', np.mean(specificity_resume))
 
     def print_percent(self, number):
         return str(number).replace('.', ',')
+
+    def calc_accuracy(self, testing, predictions):
+        return accuracy_score(testing, predictions)
 
     def matrix_confusion(self, predictions, testing):
         return confusion_matrix(testing, predictions)

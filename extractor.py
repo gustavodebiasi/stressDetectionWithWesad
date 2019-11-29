@@ -26,7 +26,7 @@ class Extractor(object):
         self.registers64 = 64 * self.window
         self.registers32 = 32 * self.window
         self.registers4 = 4 * self.window 
-        self.overlap = (self.window - 30) * 700
+        self.overlap = (self.window - 20) * 700
 
     def extract_default_features(self, data):
         var_mean = np.mean(data)
@@ -118,10 +118,10 @@ class Extractor(object):
             return 0.
 
     def extract_ecg(self, data_ecg):
-        try:
-            data = nk.ecg_process(ecg=data_ecg, rsp=None, sampling_rate=700)
-        except:
-            return []
+        # try:
+        data = nk.ecg_process(ecg=data_ecg, rsp=None, sampling_rate=700)
+        # except:
+            # return []
 
         default_features = self.extract_default_features(data_ecg)
         default_features.extend([
@@ -150,10 +150,10 @@ class Extractor(object):
         return default_features
 
     def extract_resp(self, data_resp):
-        try:
-            data = nk.rsp_process(data_resp, 700)
-        except:
-            return False 
+        # try:
+        data = nk.rsp_process(data_resp, 700)
+        # except:
+            # return False 
 
         default_features = self.extract_default_features(data_resp)
         default_features.extend([
@@ -164,10 +164,10 @@ class Extractor(object):
         return default_features
 
     def extract_eda(self, data_eda, label):
-        try:
-            data = nk.eda_process(data_eda, 700)
-        except:
-            return []
+        # try:
+        data = nk.eda_process(data_eda, 700)
+        # except:
+            # return []
 
         default_features = self.extract_default_features(data_eda)
         default_features.extend([
@@ -205,16 +205,24 @@ class Extractor(object):
             if (i == data_size):
                 data_window.append(data[i])
 
-            if ((i == data_size and len(data_window) > 0) or (i > 0 and (len(data_window) % registers) == 0) or (label_anterior != labels[i] and len(data_window) > 0)):
+            
+
+            # if ((i == data_size and len(data_window) > 0) or (i > 0 and (len(data_window) % registers) == 0) or (label_anterior != labels[i] and len(data_window) > 0)):
+            
+            if (i > 0 and (len(data_window) % registers) == 0):
+                print(len(data_window))
                 result = self.extract_features(data_window, which, labels[i])
-                if (result):
-                    all_features.append(result)
-                    window_labels.append(labels[i])
+                # if (result):
+                all_features.append(result)
+                window_labels.append(labels[i])
 
                 data_window = []
                 
                 if (i != data_size and self.window_overlap and len(data_window) % registers == 0 and label_anterior == labels[i]):
                     i = i - self.overlap
+            else:
+                if (label_anterior != labels[i]):
+                    data_window = []
                 
             if (i == data_size):
                 all_feat = np.asarray(all_features)
